@@ -72,6 +72,8 @@ public sealed class DeviceTracker
             // coarse reading; exact digits are not yet confirmed against the Mac -> Corroborated.
             status = status with
             {
+                ConnectedHostSuffix = new Reading<int>(exact.HostSuffix, Confidence.VerifiedOnDevice,
+                    "Decrypted bytes 4-6 = connected host address (protocol-findings F11)"),
                 ExactBattery = resolver.UserVerified
                     ? new Reading<int>(exact.Level, Confidence.VerifiedOnDevice, "Decrypted with your key; owner confirmed it matches the Mac")
                     : new Reading<int>(exact.Level, Confidence.Corroborated,

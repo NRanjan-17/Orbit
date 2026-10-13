@@ -17,8 +17,13 @@ public enum KeyState
     Rejected,
 }
 
-/// <summary>Decrypted battery for one advertisement.</summary>
-public sealed record ExactBattery(int Level, bool Charging);
+/// <summary>Decrypted values from one advertisement.</summary>
+/// <param name="HostSuffix">
+/// Plaintext bytes 4-6 as a 24-bit number: the lower three bytes of the Bluetooth address of the device the headphones
+/// are connected to (protocol-findings F11: this PC's address in 239 frames while connected to the PC, a different
+/// constant value in 40 frames while connected to the Mac). -1 when not decoded.
+/// </param>
+public sealed record ExactBattery(int Level, bool Charging, int HostSuffix = -1);
 
 /// <summary>
 /// Decrypts the encrypted tail with the user's key and decides whether to trust it.
@@ -200,6 +205,6 @@ public sealed class ExactBatteryResolver
             return null;
         }
 
-        return new ExactBattery(level, charging);
+        return new ExactBattery(level, charging, plain[4] << 16 | plain[5] << 8 | plain[6]);
     }
 }

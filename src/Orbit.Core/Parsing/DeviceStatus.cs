@@ -22,6 +22,12 @@ public sealed record DeviceStatus
     /// Unknown when no key is set or the key is not yet confirmed.
     /// </summary>
     public Reading<int> ExactBattery { get; init; } = Reading<int>.Unknown();
+
+    /// <summary>
+    /// Lower three bytes of the address of the device the headphones are connected to, from the decrypted tail
+    /// (needs the exact-battery key). Compare with this PC's adapter to tell "this PC" from "another device".
+    /// </summary>
+    public Reading<int> ConnectedHostSuffix { get; init; } = Reading<int>.Unknown();
     public Reading<bool> Charging { get; init; } = Reading<bool>.Unknown();
     public Reading<bool> Worn { get; init; } = Reading<bool>.Unknown();
 

@@ -146,7 +146,7 @@ public class ExactBatteryTests
     {
         var coarse = new Reading<int>(60, Confidence.VerifiedOnDevice, "t"); // advertised nibble 6
         var exact = ExactBatteryResolver.Decode(Convert.FromHexString(plainHex), coarse);
-        Assert.Equal(new ExactBattery(65, false), exact); // byte 1 = 0x41 = 65 %
+        Assert.Equal(new ExactBattery(65, false, 0xAAAAAA), exact); // byte 1 = 0x41 = 65 %; bytes 4-6 = (redacted) host
     }
 
     [Fact]
@@ -159,6 +159,6 @@ public class ExactBatteryTests
         Assert.Null(ExactBatteryResolver.Decode(plain, coarse));
 
         plain[1] = 37;
-        Assert.Equal(new ExactBattery(37, false), ExactBatteryResolver.Decode(plain, coarse));
+        Assert.Equal(new ExactBattery(37, false, 0), ExactBatteryResolver.Decode(plain, coarse));
     }
 }

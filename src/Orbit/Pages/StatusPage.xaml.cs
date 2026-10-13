@@ -76,7 +76,10 @@ public sealed partial class StatusPage : Page
             return;
         }
 
-        var bt = !sw.IsAvailable ? "Choose your device below." : sw.IsConnected ? "Connected to this PC" : "Not connected to this PC";
+        var bt = !sw.IsAvailable ? "Choose your device below."
+            : sw.IsConnected ? "Connected to this PC"
+            : _service?.ConnectedTo == Core.Switching.ConnectedTo.OtherDevice ? "In use by another device (e.g. your Mac)"
+            : "Not connected to this PC";
         ConnectionText.Text = _service?.UsbConnected == true ? "Connected by USB-C cable" + (sw.IsConnected ? " and Bluetooth" : "") : bt;
         var usb = _service?.UsbConnected == true;
         UsbChip.Visibility = usb ? Visibility.Visible : Visibility.Collapsed;

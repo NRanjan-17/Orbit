@@ -35,6 +35,10 @@ in use by another device (such as your Mac), asleep, or out of range…"* and re
 30 s. Auto-connect has its own 2-minute cooldown.
 
 ### "In use by another device" detection
+**Update 2026-10-14:** with the exact-battery key, the decrypted broadcast carries the connected host's address
+(protocol-findings F11, verified with the Mac). Orbit now shows "In use by another device (e.g. your Mac)" when it
+differs from this PC. Without a key, the original limitation below still applies.
+
 The task asked to use a captured "connected elsewhere" bit **only if verified**. Tagged captures
 (protocol-findings.md F4) show **no** unencrypted advertisement byte that tracks *connected to Mac* vs
 *connected to PC* vs *disconnected* (`d[10]` varies but does not follow the tags). So Orbit does **not**

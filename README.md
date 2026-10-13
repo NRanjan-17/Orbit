@@ -78,7 +78,7 @@ readings drive auto-pause and low-battery alerts.
 | Dolby Atmos for Headphones | Not bundled (Dolby's paid Dolby Access app); appears in the spatial list once installed |
 | Start with Windows, low-battery toast, hotkey, auto-connect | ⏳ Built; not yet tried |
 | Noise mode in advertisements | ❌ Not broadcast at all, readable or encrypted (verified, F4/F8) |
-| "Connected to another device" | ⏳ Likely in the decrypted tail (bytes 4-6 = connected host's address, F11); one capture with the Mac needed |
+| "In use by another device" (needs the exact-battery key) | ✅ Verified: decrypted bytes 4-6 = connected host's address (this PC in 239 frames, a different value in 40 frames on the Mac, F11) |
 | Other AirPods models (LibrePods rules, cross-checked with AirPodsDesktop/OpenPods) | ⚠️ Unverified on real hardware |
 
 ## Known limits
@@ -104,7 +104,7 @@ readings drive auto-pause and low-battery alerts.
 4. **Charging:** plug in USB-C with the Max awake → Charging "Yes"; unplug → "No" within about 30 s.
 5. **USB-C:** connect the cable → "USB-C cable" chip and a notification; disconnect → notification.
 6. **Switching:** see [docs/multi-device.md](docs/multi-device.md); most important: hybrid release, then connect on the Mac.
-7. **"Connected elsewhere" (F11):** with the Max connected to the **Mac**, run a Debug capture for a minute.
+7. **"In use by another device":** with the key set and the Max on the Mac, Status shows it; switch to the PC → "Connected to this PC".
 8. **Tray:** hover → tooltip; click → flyout; right-click → menu; Quit exits. Optional battery number as the icon.
 9. **Chime:** Settings → *Test chime* plays in the headphones.
 10. **Low battery / Start with Windows / hotkey / auto-connect:** when convenient.

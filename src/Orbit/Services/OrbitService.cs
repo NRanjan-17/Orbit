@@ -60,6 +60,16 @@ public sealed class OrbitService : IDisposable
 
     private readonly Platform.Audio.UsbAudioMonitor _usb = new();
 
+    private int? _localAddressSuffix;
+
+    /// <summary>
+    /// Which device the headphones are connected to, from the latest fresh decrypted broadcast (needs the
+    /// exact-battery key). Unknown while asleep or without a key.
+    /// </summary>
+    public Core.Switching.ConnectedTo ConnectedTo => Current is { } c
+        ? Core.Switching.ConnectedHost.Classify(c.Status.ConnectedHostSuffix, _localAddressSuffix)
+        : Core.Switching.ConnectedTo.Unknown;
+
     /// <summary>True while Apple headphones are connected to this PC by USB-C cable (USB Audio).</summary>
     public bool UsbConnected => _usb.IsConnected;
 
@@ -92,6 +102,15 @@ public sealed class OrbitService : IDisposable
 
     public async Task StartAsync()
     {
+        try
+        {
+            _localAddressSuffix = await Platform.Bluetooth.LocalAdapter.GetAddressSuffixAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Error("local adapter", ex);
+        }
+
         await RefreshBindingAsync();
         try
         {

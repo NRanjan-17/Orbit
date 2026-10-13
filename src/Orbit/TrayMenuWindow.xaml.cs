@@ -97,6 +97,10 @@ public sealed partial class TrayMenuWindow : Window
             {
                 parts.Add("USB");
             }
+            else if (s.ConnectedTo == Core.Switching.ConnectedTo.OtherDevice)
+            {
+                parts.Add("on another device");
+            }
 
             StatusText.Text = string.Join(" · ", parts);
         }

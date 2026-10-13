@@ -91,12 +91,14 @@ Consequences in Orbit:
 - Uncached SDP query from Windows (`orbit-cli rfcomm`): exactly one RFCOMM service, `0x111E` (Hands-Free).
 - So Apple's accessory protocol is not reachable through WinRT RFCOMM; it is on L2CAP PSM 0x1001 [S2].
 
-## F11. Decrypted bytes 4-6 = the connected host's address — HYPOTHESIS, needs one capture
-- In every decrypted broadcast so far (Max connected to this PC), plaintext bytes 4-6 equal the last three bytes of
-  this PC's Bluetooth adapter address (seen in Windows' RFCOMM connection string; values deliberately not recorded).
-- If a capture while the Max is connected to the Mac shows the Mac's address bytes there instead, this is the
-  "connected to which device" signal F4 could not find in the readable bytes, and Orbit can show "in use by
-  another device" and skip doomed switch attempts. Until then it is unused.
+## F11. Decrypted bytes 4-6 = the connected host's address — VERIFIED (2026-10-14)
+- Connected to this PC (3 captures, 239 decrypted frames): plaintext bytes 4-6 always equal the last three bytes of
+  this PC's Bluetooth adapter address; byte 10 = `00`.
+- Connected to the Mac (03:55 capture, 40 frames, tag `connected-mac`): bytes 4-6 are a different, constant value;
+  byte 10 = `06`. (Values deliberately not recorded; comparison done in place.)
+- This is the "connected to which device" signal F4 could not find in the readable bytes. Orbit compares bytes 4-6
+  with this PC's adapter (`ConnectedHost.Classify`): equal → this PC, other non-zero → another device, zero/absent →
+  unknown. Needs the exact-battery key. Byte 10's meaning is unknown and unused.
 
 ## F6. Charging session (2026-10-13 23:43, 60 s, Max plugged in by USB-C and awake) — fixture `charging-session-max-usbc.csv`
 - **Battery — VERIFIED (2nd reading):** `d[6] = 06` all session; the Mac showed **65 %** → "60–69%". With F4
