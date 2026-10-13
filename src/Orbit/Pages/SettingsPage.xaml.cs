@@ -27,6 +27,7 @@ public sealed partial class SettingsPage : Page
         LowBatteryBox.Value = s.LowBatteryPercent;
         StartupToggle.IsOn = StartupRegistration.IsEnabled();
         UnverifiedToggle.IsOn = s.ShowUnverified;
+        TrayBatteryToggle.IsOn = s.TrayShowsBattery;
         ResponseBox.SelectedItem = ResponseBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == s.AutoPauseResponse) ?? ResponseBox.Items[0];
         ChimeConnectToggle.IsOn = s.ChimeOnConnect;
         ChimePutOnToggle.IsOn = s.ChimeOnPutOn;
@@ -59,6 +60,7 @@ public sealed partial class SettingsPage : Page
         }
 
         s.ShowUnverified = UnverifiedToggle.IsOn;
+        s.TrayShowsBattery = TrayBatteryToggle.IsOn;
         RssiValue.Text = $"{s.RssiThreshold} dBm";
 
         if (s.StartWithWindows != StartupToggle.IsOn)

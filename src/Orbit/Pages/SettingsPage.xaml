@@ -61,6 +61,15 @@
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xEBA7;" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource RowTitle}" Text="Show battery in the tray icon" />
+                    <TextBlock Style="{StaticResource RowDescription}" Text="The tray icon shows the battery percentage instead of the Orbit logo." />
+                </StackPanel>
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="TrayBatteryToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+            </Grid>
+            <Grid Style="{StaticResource Row}">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE9F5;" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Show unverified readings" />

@@ -197,8 +197,56 @@ public partial class App : Application
         if (_tray is not null && _service is not null)
         {
             _tray.ToolTipText = Display.Tooltip(_service.DisplayName, _service.Current, _service.LastKnown, _service.Settings.ShowUnverified);
+            UpdateTrayIcon();
+        }
+    }
+
+    private string? _trayIconKey;
+
+    /// <summary>
+    /// Orbit logo, or (Settings → "Show battery in the tray icon") the battery number drawn as the icon:
+    /// exact % when available, otherwise the lower end of the 10 % band; logo when nothing is known.
+    /// </summary>
+    private void UpdateTrayIcon()
+    {
+        var s = (_service!.Current ?? _service.LastKnown)?.Status;
+        int? percent = s is null ? null
+            : s.ExactBattery.HasValue ? s.ExactBattery.Value
+            : Display.IsShown(s.LowestBattery, _service.Settings.ShowUnverified) ? s.LowestBattery.Value
+            : null;
+
+        var light = TaskbarUsesLightTheme();
+        var key = _service.Settings.TrayShowsBattery && percent is { } p ? $"{p}|{light}" : "logo";
+        if (key == _trayIconKey)
+        {
+            return;
         }
 
+        _trayIconKey = key;
+        if (key == "logo")
+        {
+            _tray!.IconSource = new BitmapImage(new Uri(Path.Combine(AppContext.BaseDirectory, "Assets", "Orbit.ico")));
+            return;
+        }
+
+        var value = percent!.Value;
+        var color = value <= _service.Settings.LowBatteryPercent
+            ? Windows.UI.Color.FromArgb(255, 255, 140, 0)            // orange when low
+            : light ? Microsoft.UI.Colors.Black : Microsoft.UI.Colors.White;
+        _tray!.IconSource = new GeneratedIconSource
+        {
+            Text = value >= 100 ? "100" : value.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(color),
+            FontSize = value >= 100 ? 26 : 36,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+        };
+    }
+
+    /// <summary>Taskbar theme (HKCU ...\Themes\Personalize\SystemUsesLightTheme); true = light taskbar.</summary>
+    private static bool TaskbarUsesLightTheme()
+    {
+        using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+        return key?.GetValue("SystemUsesLightTheme") is int v && v == 1;
     }
 
     public async Task PlayChimeAsync()

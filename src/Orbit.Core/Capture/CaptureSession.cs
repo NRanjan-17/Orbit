@@ -29,6 +29,13 @@ public sealed class CaptureSession : IDisposable
 
     public int AdvertisementCount { get; private set; }
 
+    /// <summary>
+    /// Optional decryptor for the headphones' encrypted tail (returns plaintext hex, or null for other frames).
+    /// When set, the plaintext is recorded in the note column so state hidden in the encrypted part can be
+    /// analysed against tags.
+    /// </summary>
+    public Func<byte[], string?>? Decryptor { get; set; }
+
     public int ProximityPairingCount { get; private set; }
 
     public string CurrentTag
@@ -55,6 +62,8 @@ public sealed class CaptureSession : IDisposable
     /// <summary>Records an advertisement. Returns false if it was filtered out or the session is closed.</summary>
     public bool Record(DateTimeOffset timestampUtc, ulong address, short rssi, string advType, ushort companyId, byte[] payload)
     {
+        // Optional: decrypted tail written to the note column as "plain=<hex>" (see Decryptor).
+        var note = Decryptor?.Invoke(payload) is { } plain ? "plain=" + plain : "";
         if (AppleOnly && companyId != AdvertisementRecord.AppleCompanyId)
         {
             return false;
@@ -67,7 +76,7 @@ public sealed class CaptureSession : IDisposable
                 return false;
             }
 
-            var record = new AdvertisementRecord(RecordKind.Advertisement, timestampUtc, address, rssi, advType, companyId, payload, _currentTag, "");
+            var record = new AdvertisementRecord(RecordKind.Advertisement, timestampUtc, address, rssi, advType, companyId, payload, _currentTag, note);
             _writer.WriteLine(CaptureCsv.FormatRow(record));
             AdvertisementCount++;
             if (record.AppleMessageType == 0x07)

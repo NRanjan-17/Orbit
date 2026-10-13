@@ -48,6 +48,10 @@ public sealed partial class CapturePage : Page
         try
         {
             _session = CaptureSession.CreateIn(AppPaths.CapturesDirectory, DateTimeOffset.Now);
+
+            // With a confirmed exact-battery key, also record the decrypted tail (note column) so hidden state such
+            // as noise mode can be compared against tags.
+            _session.Decryptor = App.Service?.CreateCaptureDecryptor();
             _scanner = new AppleAdvertisementScanner();
             _scanner.AdvertisementReceived += OnAdvertisement;
             _scanner.Stopped += OnScannerStopped;
@@ -183,7 +187,8 @@ public sealed partial class CapturePage : Page
             return;
         }
 
-        StatusText.Text = $"Capturing to {_session.FilePath}  -  {_session.AdvertisementCount} Apple frames, {_session.ProximityPairingCount} proximity pairing";
+        StatusText.Text = $"Capturing to {_session.FilePath}  -  {_session.AdvertisementCount} Apple frames, {_session.ProximityPairingCount} proximity pairing"
+            + (_session.Decryptor is null ? "" : "  -  recording decrypted data (exact-battery key)");
         CurrentTagText.Text = $"Current tag: {_session.CurrentTag}";
     }
 }

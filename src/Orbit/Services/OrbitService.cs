@@ -235,6 +235,26 @@ public sealed class OrbitService : IDisposable
         };
     }
 
+    /// <summary>
+    /// For the Debug Capture page: decrypts a Proximity Pairing payload of the bound device with the confirmed
+    /// key and returns the plaintext as hex (null if no confirmed key or not the bound device). Used to look for
+    /// state such as noise mode inside the encrypted part. Plaintext only; the key is never exposed.
+    /// </summary>
+    public Func<byte[], string?>? CreateCaptureDecryptor()
+    {
+        if (_keyStore.Load() is not { } key || _tracker.Exact is not { State: Core.Crypto.KeyState.Confirmed } exact || BoundProfile is null)
+        {
+            return null;
+        }
+
+        var effective = exact.UsedReversedKey ? key.Reverse().ToArray() : key;
+        var model = BoundProfile.ModelId;
+        return payload =>
+            Core.Parsing.ProximityPairingFrame.TryParse(payload, out var f) && f is not null && f.ModelId == model
+                ? Convert.ToHexString(Core.Crypto.ProximityKey.DecryptBlock(f.EncryptedTail, effective))
+                : null;
+    }
+
     /// <summary>True when the owner confirmed the exact battery matches their Mac for the stored key.</summary>
     public bool ExactBatteryVerified => _tracker.Exact?.UserVerified == true;
 

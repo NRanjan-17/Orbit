@@ -27,6 +27,9 @@ public sealed class OrbitSettings
 
     public bool StartWithWindows { get; set; }
 
+    /// <summary>Draw the battery percentage as the tray icon instead of the Orbit logo.</summary>
+    public bool TrayShowsBattery { get; set; }
+
     /// <summary>Short SHA-256 fingerprint of the exact-battery key that was confirmed (not the key itself).</summary>
     public string? ExactKeyFingerprint { get; set; }
 
