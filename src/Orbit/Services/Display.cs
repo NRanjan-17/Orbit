@@ -17,6 +17,17 @@ public static class Display
     public static string Battery(Reading<int> r, bool showUnverified) =>
         IsShown(r, showUnverified) ? ProximityPairingParser.FormatBattery(r.Value) + Badge(r.Confidence) : "Unknown";
 
+    /// <summary>Exact percent when decrypted with the user's key, otherwise the advertised 10 % range.</summary>
+    public static string BatteryOf(DeviceStatus s, bool showUnverified)
+    {
+        if (s.ExactBattery.HasValue)
+        {
+            return $"{s.ExactBattery.Value}%" + Badge(s.ExactBattery.Confidence);
+        }
+
+        return Battery(s.LowestBattery, showUnverified);
+    }
+
     public static string Flag(Reading<bool> r, bool showUnverified, string yes, string no) =>
         IsShown(r, showUnverified) ? (r.Value ? yes : no) + Badge(r.Confidence) : "Unknown";
 
@@ -29,12 +40,12 @@ public static class Display
         {
             return lastKnown is null
                 ? $"Orbit: {name} not seen"
-                : $"Orbit: {name} asleep or out of range (last {Battery(lastKnown.Status.LowestBattery, showUnverified)})";
+                : $"Orbit: {name} asleep or out of range (last {BatteryOf(lastKnown.Status, showUnverified)})";
         }
 
         var s = current.Status;
         var worn = s.AnyWorn.HasValue ? (s.AnyWorn.Value ? ", on head" : ", off head") : "";
-        var text = $"Orbit: {name} {Battery(s.LowestBattery, showUnverified)}{worn}";
+        var text = $"Orbit: {name} {BatteryOf(s, showUnverified)}{worn}";
         return text.Length > 127 ? text[..127] : text;
     }
 }

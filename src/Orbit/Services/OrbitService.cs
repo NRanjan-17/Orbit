@@ -142,11 +142,41 @@ public sealed class OrbitService : IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    private readonly Platform.KeyStore _keyStore = new(Path.Combine(AppPaths.DataDirectory, "device-key.bin"));
+
+    /// <summary>State of the user's encryption key for exact battery (None / Checking / Confirmed / Rejected).</summary>
+    public Core.Crypto.KeyState KeyState => _tracker.Exact?.State ?? Core.Crypto.KeyState.None;
+
+    /// <summary>Parses and stores the key (bare hex or the whole keychain plist). Returns false if not a 16-byte key.</summary>
+    public bool SetKey(string text)
+    {
+        if (!Core.Crypto.ProximityKey.TryParse(text, out var key))
+        {
+            return false;
+        }
+
+        _keyStore.Save(key);
+        _tracker.Exact = new Core.Crypto.ExactBatteryResolver(key);
+        Log.Write("exact battery key saved (DPAPI)");
+        Changed?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    public void RemoveKey()
+    {
+        _keyStore.Delete();
+        _tracker.Exact = null;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
     private void ApplyBinding(PairedDevice? device)
     {
         BoundDevice = device;
         BoundProfile = device is null ? null : BoundDeviceProfile.Create(device.Name, device.VendorId, device.ProductId, device.ClassOfDevice);
-        _tracker = new DeviceTracker(BoundProfile, Settings.RssiThreshold);
+        _tracker = new DeviceTracker(BoundProfile, Settings.RssiThreshold)
+        {
+            Exact = _keyStore.Load() is { } key ? new Core.Crypto.ExactBatteryResolver(key) : null,
+        };
         _autoPause = CreateAutoPause();
         LastKnown = null;
         Changed?.Invoke(this, EventArgs.Empty);

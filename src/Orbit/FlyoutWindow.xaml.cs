@@ -60,7 +60,7 @@ public sealed partial class FlyoutWindow : Window
         var show = s.Settings.ShowUnverified;
         var shown = s.Current ?? s.LastKnown;
         NameText.Text = s.DisplayName;
-        BatteryText.Text = shown is null ? "-" : Display.Battery(shown.Status.LowestBattery, show);
+        BatteryText.Text = shown is null ? "-" : Display.BatteryOf(shown.Status, show);
         WornText.Text = shown is null ? "" : Display.Flag(shown.Status.AnyWorn, show, "On head", "Off head");
         ChargingText.Text = shown is null ? "" : "Charging: " + Display.Flag(shown.Status.Charging, show, "yes", "no");
         PresenceText.Text = s.Current is not null

@@ -53,6 +53,7 @@ multi-source community values are marked *(unverified)*, single-source values ar
 | Device recognition: Windows Device ID product ↔ advertised model bytes | ✅ Verified |
 | On-head: `d[5]` = `2B` on / `01` off (exact values; `3F` in case is treated as unknown) | ✅ Verified (3 tagged transitions) |
 | Battery: low nibble of `d[6]`, 10 % steps, shown as a range | ✅ Verified (two readings: Mac 37 % ↔ 3, 65 % ↔ 6) |
+| Exact battery % (optional, with the key copied from your Mac; [docs/exact-battery.md](docs/exact-battery.md)) | ⚠️ Community-documented (LibrePods, CAPod); cross-checked against the coarse reading; not yet confirmed on your Max |
 | Charging: `d[7] & 0x10`, held 30 s to bridge dropouts | ✅ Verified (set 28/37 frames plugged in, 1/432 unplugged) |
 | Noise mode in advertisements | ❌ Not present in unencrypted bytes (verified) |
 | "Connected to another device" bit | ❌ Not present in unencrypted bytes (verified) |

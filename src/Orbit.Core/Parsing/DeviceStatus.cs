@@ -16,6 +16,12 @@ public sealed record DeviceStatus
 
     // ---- Headphones (single battery) ----
     public Reading<int> Battery { get; init; } = Reading<int>.Unknown();
+
+    /// <summary>
+    /// Exact battery percent decrypted from the encrypted tail with the user's key (Crypto.ExactBatteryResolver).
+    /// Unknown when no key is set or the key is not yet confirmed.
+    /// </summary>
+    public Reading<int> ExactBattery { get; init; } = Reading<int>.Unknown();
     public Reading<bool> Charging { get; init; } = Reading<bool>.Unknown();
     public Reading<bool> Worn { get; init; } = Reading<bool>.Unknown();
 

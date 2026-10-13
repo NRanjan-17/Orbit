@@ -31,6 +31,16 @@ public sealed partial class MainWindow : Window
         Nav.SelectedItem = Nav.MenuItems[0];
     }
 
+    /// <summary>Selects the nav item with the given tag ("status", "settings", "capture").</summary>
+    public void NavigateTo(string tag)
+    {
+        var item = Nav.MenuItems.Concat(Nav.FooterMenuItems).OfType<NavigationViewItem>().FirstOrDefault(i => (string)i.Tag == tag);
+        if (item is not null)
+        {
+            Nav.SelectedItem = item;
+        }
+    }
+
     private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         var pageType = ((args.SelectedItem as NavigationViewItem)?.Tag as string) switch

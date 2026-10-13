@@ -34,6 +34,9 @@ public sealed class DeviceTracker
 
     public TrackedDevice? Current { get; private set; }
 
+    /// <summary>Optional decryption of the exact battery with the user's key.</summary>
+    public Crypto.ExactBatteryResolver? Exact { get; set; }
+
     /// <summary>Feeds one advertisement. Returns the parsed status if it was accepted for the current device.</summary>
     public DeviceStatus? Add(ReadOnlySpan<byte> payload, short rssi, DateTimeOffset at)
     {
@@ -62,6 +65,17 @@ public sealed class DeviceTracker
         }
 
         status = status with { Charging = latch.Update(status.Charging, at) };
+
+        if (Exact is { } resolver && status.Form == DeviceForm.Headphones && resolver.Resolve(status.Frame, status.Battery) is { } exact)
+        {
+            // Two open-source projects decode it this way (LibrePods, CAPod) and it agreed with the verified
+            // coarse reading; exact digits are not yet confirmed against the Mac -> Corroborated.
+            status = status with
+            {
+                ExactBattery = new Reading<int>(exact.Level, Confidence.Corroborated,
+                    "Decrypted with your key (LibrePods battery.hpp L157-217, CAPod ApplePods.kt)"),
+            };
+        }
         var smoothed = _candidates.TryGetValue(key, out var prev) ? prev.SmoothedRssi * 0.7 + rssi * 0.3 : rssi;
         var tracked = new TrackedDevice(status, smoothed, rssi, at);
         _candidates[key] = tracked;

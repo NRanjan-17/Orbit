@@ -28,6 +28,7 @@ public sealed partial class StatusPage : Page
             _service.Changed += OnServiceChanged;
             PopulateDevices();
             Render();
+            RenderKey();
             _ = LoadSpatialAsync();
         }
 
@@ -63,6 +64,7 @@ public sealed partial class StatusPage : Page
 
         Render();
         RenderConnection();
+        RenderKey();
     }
 
     private string? _renderedBindingKey;
@@ -79,6 +81,41 @@ public sealed partial class StatusPage : Page
         ReleaseButton.IsEnabled = sw.IsAvailable && !sw.IsBusy && sw.IsConnected;
         SwitchProgress.IsActive = sw.IsBusy;
         SwitchResultText.Text = sw.IsBusy ? "Working..." : sw.LastResult?.Message ?? "";
+    }
+
+    private void RenderKey()
+    {
+        var state = _service!.KeyState;
+        RemoveKeyButton.IsEnabled = state != Core.Crypto.KeyState.None;
+        KeyStatus.Text = state switch
+        {
+            Core.Crypto.KeyState.None => "No key: battery is shown in 10% steps.",
+            Core.Crypto.KeyState.Checking => "Key saved. Checking it against the next few broadcasts (wake the headphones if nothing happens)...",
+            Core.Crypto.KeyState.Confirmed => "Key confirmed: showing exact battery.",
+            Core.Crypto.KeyState.Rejected => "This key does not decrypt these headphones' broadcasts. Check that you copied MagicAccEncKey (not MagicAccIRK) for this device.",
+            _ => "",
+        };
+    }
+
+    private void OnSaveKey(object sender, RoutedEventArgs e)
+    {
+        if (_service!.SetKey(KeyBox.Password))
+        {
+            KeyBox.Password = "";
+        }
+        else
+        {
+            KeyStatus.Text = "That isn't a 16-byte key. Paste the MagicAccEncKey value (32 hex digits, dashes allowed) or the whole keychain entry.";
+            return;
+        }
+
+        RenderKey();
+    }
+
+    private void OnRemoveKey(object sender, RoutedEventArgs e)
+    {
+        _service!.RemoveKey();
+        RenderKey();
     }
 
     private async void OnSwitchClick(object sender, RoutedEventArgs e) => await App.Switch!.SwitchToThisPcAsync();
@@ -123,7 +160,7 @@ public sealed partial class StatusPage : Page
             var st = shown.Status;
             BatteryText.Text = st.Form == Core.Parsing.DeviceForm.Earbuds
                 ? $"L {Display.Battery(st.LeftBattery, show)} · R {Display.Battery(st.RightBattery, show)} · Case {Display.Battery(st.CaseBattery, show)}"
-                : Display.Battery(st.Battery, show);
+                : Display.BatteryOf(st, show);
             ChargingText.Text = Display.Flag(st.Form == Core.Parsing.DeviceForm.Earbuds ? st.CaseCharging : st.Charging, show, "Yes", "No");
             WornText.Text = Display.Flag(st.AnyWorn, show, "On head", "Off head");
             SignalText.Text = s.Current is null ? "-" : Display.Signal(shown);

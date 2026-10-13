@@ -91,9 +91,17 @@ public partial class App : Application
         await _switch.SyncAsync();
     }
 
-    public void ShowMainWindow()
+    public void ShowMainWindow() => ShowMainWindow(null);
+
+    /// <param name="page">Optional page tag to open: "status", "settings" or "capture".</param>
+    public void ShowMainWindow(string? page)
     {
         _window ??= new MainWindow();
+        if (page is not null)
+        {
+            _window.NavigateTo(page);
+        }
+
         _window.AppWindow.Show();
         _window.Activate();
     }
@@ -116,64 +124,27 @@ public partial class App : Application
 
     private void CreateTray()
     {
-        var menu = new MenuFlyout();
-        menu.Items.Add(new MenuFlyoutItem { Text = "Open Orbit", Command = new RelayCommand(ShowMainWindow) });
-        menu.Items.Add(new MenuFlyoutItem { Text = "Switch to this PC", Command = new RelayCommand(() => _ = _switch?.SwitchToThisPcAsync()) });
-        menu.Items.Add(new MenuFlyoutItem { Text = "Release to other device", Command = new RelayCommand(() => _ = _switch?.ReleaseAsync()) });
-        menu.Items.Add(new MenuFlyoutItem { Text = "Toggle auto-pause", Command = new RelayCommand(ToggleAutoPause) });
-        menu.Items.Add(new MenuFlyoutSeparator());
-        menu.Items.Add(new MenuFlyoutItem { Text = "Start with Windows: on/off", Command = new RelayCommand(ToggleStartup) });
-        menu.Items.Add(new MenuFlyoutSeparator());
-        menu.Items.Add(new MenuFlyoutItem { Text = "Exit", Command = new RelayCommand(ExitApp) });
-
+        _trayMenu = new TrayMenu(this);
         _tray = new TaskbarIcon
         {
             ToolTipText = "Orbit",
             IconSource = new BitmapImage(new Uri(Path.Combine(AppContext.BaseDirectory, "Assets", "Orbit.ico"))),
             NoLeftClickDelay = true,
             LeftClickCommand = new RelayCommand(ShowFlyout),
-            ContextMenuMode = ContextMenuMode.PopupMenu,
-            ContextFlyout = menu,
+            // SecondWindow renders the WinUI MenuFlyout (Fluent styling, icons, check marks) instead of a Win32 menu.
+            ContextMenuMode = ContextMenuMode.SecondWindow,
+            ContextFlyout = _trayMenu.Flyout,
         };
         _tray.ForceCreate(enablesEfficiencyMode: false);
+        _switch!.Changed += (_, _) => _trayMenu.Refresh();
     }
+
+    private TrayMenu? _trayMenu;
 
     private void ShowFlyout()
     {
         _flyout ??= new FlyoutWindow();
         _flyout.ShowNearTray();
-    }
-
-    private void ToggleAutoPause()
-    {
-        if (_service is null)
-        {
-            return;
-        }
-
-        _service.Settings.AutoPause = !_service.Settings.AutoPause;
-        _service.SaveSettings();
-        Notify("Orbit", _service.Settings.AutoPause ? "Auto-pause on" : "Auto-pause off");
-    }
-
-    private void ToggleStartup()
-    {
-        var enable = !Platform.StartupRegistration.IsEnabled();
-        try
-        {
-            Platform.StartupRegistration.Set(enable, Environment.ProcessPath!);
-            if (_service is not null)
-            {
-                _service.Settings.StartWithWindows = enable;
-                _service.SaveSettings();
-            }
-
-            Notify("Orbit", enable ? "Orbit will start when Windows starts." : "Orbit will no longer start with Windows.");
-        }
-        catch (Exception ex)
-        {
-            Notify("Orbit", $"Could not change startup setting: {ex.Message}");
-        }
     }
 
     private void UpdateTray()
@@ -182,6 +153,8 @@ public partial class App : Application
         {
             _tray.ToolTipText = Display.Tooltip(_service.DisplayName, _service.Current, _service.LastKnown, _service.Settings.ShowUnverified);
         }
+
+        _trayMenu?.Refresh();
     }
 
     public async Task PlayChimeAsync()
