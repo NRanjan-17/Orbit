@@ -131,6 +131,11 @@ public sealed class OrbitService : IDisposable
     {
         Store.Save(Settings);
         _tracker.RssiThreshold = Settings.RssiThreshold;
+        if (Settings.AutoPauseResponse != _autoPauseResponse)
+        {
+            _autoPause = CreateAutoPause();
+        }
+
         _autoPause.PauseEnabled = Settings.AutoPause;
         _autoPause.ResumeEnabled = Settings.AutoResume;
         _lowBattery.ThresholdPercent = Settings.LowBatteryPercent;
@@ -147,7 +152,15 @@ public sealed class OrbitService : IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private AutoPauseController CreateAutoPause() => new(new SystemMediaController())
+    private string? _autoPauseResponse;
+
+    private AutoPauseController CreateAutoPause() => (_autoPauseResponse = Settings.AutoPauseResponse) == AutoPauseResponses.Steady
+        ? new(new SystemMediaController(), requiredReadings: 2, minimumDuration: TimeSpan.FromSeconds(1.5))
+        {
+            PauseEnabled = Settings.AutoPause,
+            ResumeEnabled = Settings.AutoResume,
+        }
+        : new(new SystemMediaController(), requiredReadings: 1, minimumDuration: TimeSpan.Zero)
     {
         PauseEnabled = Settings.AutoPause,
         ResumeEnabled = Settings.AutoResume,
@@ -169,6 +182,7 @@ public sealed class OrbitService : IDisposable
             LowBattery?.Invoke(this, (DisplayName, pct));
         }
 
+        var wornBefore = _autoPause.Worn;
         try
         {
             var action = await _autoPause.OnReadingAsync(status.AnyWorn, a.TimestampUtc);
@@ -181,7 +195,16 @@ public sealed class OrbitService : IDisposable
         {
             // Media session APIs can throw if the owning app exits mid-call; auto-pause just skips this reading.
         }
+
+        // Debounced, verified on-head transitions only (not the first reading after start-up).
+        if (wornBefore is not null && _autoPause.Worn is { } worn && worn != wornBefore)
+        {
+            WornChanged?.Invoke(this, worn);
+        }
     }
+
+    /// <summary>Raised when the debounced, verified on-head state changes (true = put on).</summary>
+    public event EventHandler<bool>? WornChanged;
 
     public string DisplayName => BoundDevice?.Name ?? LastKnown?.Status.ModelName ?? "No device";
 

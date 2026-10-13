@@ -23,6 +23,11 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+        UnhandledException += (_, e) =>
+        {
+            Log.Error("unhandled", e.Exception);
+            e.Handled = true; // keep the tray app alive; the error is in orbit.log
+        };
     }
 
     public static OrbitService? Service => (Current as App)?._service;
@@ -52,11 +57,25 @@ public partial class App : Application
         _service.AutoPaused += (_, a) => UpdateTray();
 
         _switch = new SwitchService(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread(), _service);
-        _switch.Completed += (_, r) =>
+        _switch.Completed += async (_, r) =>
         {
             if (r.Outcome is not Core.Switching.SwitchOutcome.AlreadyConnected and not Core.Switching.SwitchOutcome.AlreadyReleased)
             {
                 Notify("Orbit", r.Message);
+            }
+
+            if (r.Outcome == Core.Switching.SwitchOutcome.Connected && _service.Settings.ChimeOnConnect)
+            {
+                // Give Windows a moment to route the new A2DP output before playing.
+                await Task.Delay(1500);
+                await PlayChimeAsync();
+            }
+        };
+        _service.WornChanged += async (_, worn) =>
+        {
+            if (worn && _service.Settings.ChimeOnPutOn && _switch.IsConnected)
+            {
+                await PlayChimeAsync();
             }
         };
 
@@ -103,6 +122,8 @@ public partial class App : Application
         menu.Items.Add(new MenuFlyoutItem { Text = "Release to other device", Command = new RelayCommand(() => _ = _switch?.ReleaseAsync()) });
         menu.Items.Add(new MenuFlyoutItem { Text = "Toggle auto-pause", Command = new RelayCommand(ToggleAutoPause) });
         menu.Items.Add(new MenuFlyoutSeparator());
+        menu.Items.Add(new MenuFlyoutItem { Text = "Start with Windows: on/off", Command = new RelayCommand(ToggleStartup) });
+        menu.Items.Add(new MenuFlyoutSeparator());
         menu.Items.Add(new MenuFlyoutItem { Text = "Exit", Command = new RelayCommand(ExitApp) });
 
         _tray = new TaskbarIcon
@@ -135,11 +156,48 @@ public partial class App : Application
         Notify("Orbit", _service.Settings.AutoPause ? "Auto-pause on" : "Auto-pause off");
     }
 
+    private void ToggleStartup()
+    {
+        var enable = !Platform.StartupRegistration.IsEnabled();
+        try
+        {
+            Platform.StartupRegistration.Set(enable, Environment.ProcessPath!);
+            if (_service is not null)
+            {
+                _service.Settings.StartWithWindows = enable;
+                _service.SaveSettings();
+            }
+
+            Notify("Orbit", enable ? "Orbit will start when Windows starts." : "Orbit will no longer start with Windows.");
+        }
+        catch (Exception ex)
+        {
+            Notify("Orbit", $"Could not change startup setting: {ex.Message}");
+        }
+    }
+
     private void UpdateTray()
     {
         if (_tray is not null && _service is not null)
         {
             _tray.ToolTipText = Display.Tooltip(_service.DisplayName, _service.Current, _service.LastKnown, _service.Settings.ShowUnverified);
+        }
+    }
+
+    public async Task PlayChimeAsync()
+    {
+        if (_service?.BoundDevice?.ContainerId is not { } container)
+        {
+            return;
+        }
+
+        try
+        {
+            await Platform.Audio.ChimePlayer.PlayAsync(container);
+        }
+        catch (Exception)
+        {
+            // A chime is cosmetic; never let it break switching or auto-pause.
         }
     }
 

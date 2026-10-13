@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="Orbit.Pages.StatusPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -85,7 +85,7 @@
                     <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
                                Text="Orbit recognises your headphones by the Device ID Windows reports for the paired device. Only advertisements from that model are shown. The choice is stored on this PC only." />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <ComboBox x:Name="DevicePicker" MinWidth="320" DisplayMemberPath="Name" SelectionChanged="OnDevicePicked" />
+                        <ComboBox x:Name="DevicePicker" MinWidth="320" SelectionChanged="OnDevicePicked" />
                         <Button Content="Refresh" Click="OnRefreshDevices" />
                     </StackPanel>
                 </StackPanel>

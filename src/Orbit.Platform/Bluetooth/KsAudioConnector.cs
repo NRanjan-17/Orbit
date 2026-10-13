@@ -27,6 +27,78 @@ public sealed class KsAudioConnector(Guid containerId) : IAudioConnector
     /// <summary>Details of the last call, for the diagnostics log.</summary>
     public string LastDiagnostics { get; private set; } = "";
 
+    /// <summary>
+    /// Read-only: state of each render endpoint (Headphones / Headset) in the device's container.
+    /// DEVICE_STATE_*: 1 = active, 2 = disabled, 4 = not present, 8 = unplugged (mmdeviceapi.h).
+    /// An audio-profile disconnect shows up here even while the Bluetooth link itself stays up.
+    /// </summary>
+    public IReadOnlyList<(string Name, uint State)> GetEndpointStates()
+    {
+        var result = new List<(string, uint)>();
+        var enumerator = (IMMDeviceEnumerator)new MMDeviceEnumeratorComObject();
+        try
+        {
+            if (enumerator.EnumAudioEndpoints(EDataFlow.Render, DeviceState.All, out var collection) < 0)
+            {
+                return result;
+            }
+
+            collection.GetCount(out var count);
+            for (uint i = 0; i < count; i++)
+            {
+                if (collection.Item(i, out var endpoint) < 0)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (ContainerOf(endpoint) == containerId && endpoint.GetState(out var state) >= 0)
+                    {
+                        result.Add((FriendlyNameOf(endpoint) ?? "endpoint", state));
+                    }
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(endpoint);
+                }
+            }
+
+            Marshal.ReleaseComObject(collection);
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(enumerator);
+        }
+
+        return result;
+    }
+
+    private static string? FriendlyNameOf(IMMDevice endpoint)
+    {
+        if (endpoint.OpenPropertyStore(0, out var store) < 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            var key = PropertyKey.DeviceFriendlyName;
+            if (store.GetValue(ref key, out var value) < 0)
+            {
+                return null;
+            }
+
+            var name = value.AsString();
+            PropVariantNative.PropVariantClear(ref value);
+            return name;
+        }
+        finally
+        {
+            Marshal.ReleaseComObject(store);
+        }
+    }
+
     /// <summary>Read-only diagnostic: how many Bluetooth audio KS filters belong to the device (sends nothing).</summary>
     public int CountFilters() => FindBluetoothFilters([]).Count;
 

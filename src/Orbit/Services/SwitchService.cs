@@ -20,6 +20,8 @@ public sealed class SwitchService : IDisposable
     private readonly AutoConnectPolicy _autoConnect = new();
     private readonly DispatcherQueueTimer _playbackTimer;
     private ConnectionMonitor? _monitor;
+    private AudioConnectionState? _audio;
+    private bool _audioConnected;
     private SwitchCoordinator? _coordinator;
     private IAudioConnector? _connector;
     private GlobalHotkey? _hotkey;
@@ -33,7 +35,11 @@ public sealed class SwitchService : IDisposable
         _orbit.Changed += async (_, _) => await SyncAsync();
         _playbackTimer = ui.CreateTimer();
         _playbackTimer.Interval = TimeSpan.FromSeconds(2);
-        _playbackTimer.Tick += async (_, _) => await CheckAutoConnectAsync();
+        _playbackTimer.Tick += async (_, _) =>
+        {
+            RefreshAudioState();
+            await CheckAutoConnectAsync();
+        };
         _playbackTimer.Start();
     }
 
@@ -45,7 +51,11 @@ public sealed class SwitchService : IDisposable
 
     public bool IsAvailable => _coordinator is not null;
 
-    public bool IsConnected => _monitor?.IsConnected == true;
+    /// <summary>
+    /// Audio connected to this PC (an active Headphones/Headset output), refreshed every 2 s. Not the raw
+    /// Bluetooth link, which can stay up long after the audio is released.
+    /// </summary>
+    public bool IsConnected => _audioConnected;
 
     public bool IsBusy { get; private set; }
 
@@ -56,6 +66,7 @@ public sealed class SwitchService : IDisposable
     {
         KsAudioConnector k => k.LastDiagnostics,
         ServiceStateConnector s => s.LastDiagnostics,
+        HybridConnector h => h.LastDiagnostics,
         _ => "",
     };
 
@@ -76,6 +87,7 @@ public sealed class SwitchService : IDisposable
             _method = method;
             _monitor?.Dispose();
             _monitor = null;
+            _audio = null;
             _coordinator = null;
             _connector = null;
 
@@ -84,14 +96,19 @@ public sealed class SwitchService : IDisposable
                 _monitor = await ConnectionMonitor.CreateAsync(device.DeviceId);
                 if (_monitor is not null)
                 {
-                    _monitor.Changed += (_, _) => _ui.TryEnqueue(() => Changed?.Invoke(this, EventArgs.Empty));
-                    _connector = method == SwitchMethods.Service
-                        ? new ServiceStateConnector(device.Address, device.Name)
-                        : new KsAudioConnector(container);
-                    _coordinator = new SwitchCoordinator(_connector, _monitor);
+                    _monitor.Changed += (_, _) => _ui.TryEnqueue(RefreshAudioState);
+                    _audio = new AudioConnectionState(container);
+                    _connector = method switch
+                    {
+                        SwitchMethods.Service => new ServiceStateConnector(device.Address, device.Name),
+                        SwitchMethods.Ks => new KsAudioConnector(container),
+                        _ => new HybridConnector(container, device.Address, device.Name),
+                    };
+                    _coordinator = new SwitchCoordinator(_connector, _audio);
                 }
             }
 
+            RefreshAudioState();
             Changed?.Invoke(this, EventArgs.Empty);
         }
 
@@ -132,6 +149,25 @@ public sealed class SwitchService : IDisposable
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RefreshAudioState()
+    {
+        bool now;
+        try
+        {
+            now = _audio?.IsConnected == true;
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        if (now != _audioConnected)
+        {
+            _audioConnected = now;
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private async Task CheckAutoConnectAsync()
@@ -180,6 +216,7 @@ public sealed class SwitchService : IDisposable
         finally
         {
             IsBusy = false;
+            RefreshAudioState();
         }
 
         Changed?.Invoke(this, EventArgs.Empty);

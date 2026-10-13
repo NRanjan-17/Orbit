@@ -53,9 +53,19 @@ public sealed partial class StatusPage : Page
 
     private void OnServiceChanged(object? sender, EventArgs e)
     {
+        // The binding is resolved asynchronously at start-up (and can change): refresh the picker and spatial sound.
+        var key = $"{_service?.Settings.BoundDeviceId}|{_service?.PairedAppleDevices.Count}";
+        if (key != _renderedBindingKey)
+        {
+            PopulateDevices();
+            _ = LoadSpatialAsync();
+        }
+
         Render();
         RenderConnection();
     }
+
+    private string? _renderedBindingKey;
 
     private void RenderConnection()
     {
@@ -128,9 +138,12 @@ public sealed partial class StatusPage : Page
 
     private void PopulateDevices()
     {
+        // WinUI 3 cannot bind DisplayMemberPath to plain .NET records, so show names and map by index.
         _updatingPickers = true;
-        DevicePicker.ItemsSource = _service!.PairedAppleDevices;
-        DevicePicker.SelectedItem = _service.PairedAppleDevices.FirstOrDefault(d => d.DeviceId == _service.Settings.BoundDeviceId);
+        var devices = _service!.PairedAppleDevices;
+        DevicePicker.ItemsSource = devices.Select(d => d.Name).ToList();
+        DevicePicker.SelectedIndex = devices.ToList().FindIndex(d => d.DeviceId == _service.Settings.BoundDeviceId);
+        _renderedBindingKey = $"{_service.Settings.BoundDeviceId}|{devices.Count}";
         _updatingPickers = false;
     }
 
@@ -143,12 +156,13 @@ public sealed partial class StatusPage : Page
 
     private async void OnDevicePicked(object sender, SelectionChangedEventArgs e)
     {
-        if (_updatingPickers || DevicePicker.SelectedItem is not PairedDevice device)
+        var index = DevicePicker.SelectedIndex;
+        if (_updatingPickers || index < 0 || index >= _service!.PairedAppleDevices.Count)
         {
             return;
         }
 
-        _service!.Bind(device);
+        _service.Bind(_service.PairedAppleDevices[index]);
         await LoadSpatialAsync();
     }
 

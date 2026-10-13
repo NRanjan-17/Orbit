@@ -44,6 +44,15 @@ public sealed class ServiceStateConnector(ulong address, string name) : IAudioCo
         return ok;
     }, ct);
 
+    /// <summary>Enables the services only (no disable first). Used by <see cref="HybridConnector"/>.</summary>
+    public Task<bool> EnableAsync(CancellationToken ct) => Task.Run(() =>
+    {
+        var log = new List<string>();
+        var ok = Set(ServiceEnable, log);
+        LastDiagnostics = string.Join(Environment.NewLine, log);
+        return ok;
+    }, ct);
+
     private bool Set(uint flags, List<string> log)
     {
         var info = NativeMethods.BluetoothDeviceInfo.Create(address, name);
@@ -54,8 +63,9 @@ public sealed class ServiceStateConnector(ulong address, string name) : IAudioCo
             var err = NativeMethods.BluetoothSetServiceState(IntPtr.Zero, ref info, ref guid, flags);
             log.Add($"BluetoothSetServiceState({label}, {(flags == ServiceEnable ? "enable" : "disable")}) = {err}");
 
-            // E_INVALIDARG (0x80070057 / 87) is returned when the service is already in the requested state.
-            ok &= err is 0 or 87 or unchecked((uint)0x80070057);
+            // Already in the requested state: Microsoft documents E_INVALIDARG (0x80070057 / 87); on the owner's PC
+            // disabling an already-disabled service returned 1168 (ERROR_NOT_FOUND).
+            ok &= err is 0 or 87 or 1168 or unchecked((uint)0x80070057);
         }
 
         return ok;

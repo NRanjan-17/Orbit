@@ -9,6 +9,13 @@
             <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Settings" />
 
             <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Startup" />
+                <ToggleSwitch x:Name="StartupToggle" Header="Start Orbit when Windows starts" Toggled="OnChanged" />
+                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Orbit starts quietly in the system tray (no window). Applies to your Windows account only; no administrator rights needed." />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
                 <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Signal threshold" />
                 <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                            Text="Ignore advertisements weaker than this. Next to you is usually -35 to -60 dBm; across a room is -75 or weaker." />
@@ -21,8 +28,24 @@
                 <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Auto-pause" />
                 <ToggleSwitch x:Name="AutoPauseToggle" Header="Pause when I take the headphones off" Toggled="OnChanged" />
                 <ToggleSwitch x:Name="AutoResumeToggle" Header="Resume when I put them back on (only if Orbit paused it)" Toggled="OnChanged" />
+                <ComboBox x:Name="ResponseBox" Header="Response" Width="420" SelectionChanged="OnChanged">
+                    <ComboBoxItem Tag="fast" Content="Fast: act on the first reading (recommended)" />
+                    <ComboBoxItem Tag="steady" Content="Steady: wait for a confirming reading (2-3 s slower)" />
+                </ComboBox>
                 <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           Text="Uses only on-head readings verified on your device, and requires a consistent reading for about 1.5 seconds." />
+                           Text="Uses only on-head readings verified on your device. The headphones broadcast about once a second, so expect roughly 1-2 seconds in Fast mode." />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Chime" />
+                <ToggleSwitch x:Name="ChimeConnectToggle" Header="Play a chime in the headphones when Orbit connects them" Toggled="OnChanged" />
+                <ToggleSwitch x:Name="ChimePutOnToggle" Header="Play a chime when I put the headphones on (while connected to this PC)" Toggled="OnChanged" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Test chime" Click="OnTestChime" />
+                    <TextBlock x:Name="ChimeStatus" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="This is Orbit's own sound, played through the headphones' audio. The built-in chime is played by the headphones themselves and can't be triggered from Windows. The put-on chime follows on-head detection, so it plays a few seconds after you put them on." />
             </StackPanel>
 
             <StackPanel Spacing="4">
@@ -39,14 +62,14 @@
                 <TextBlock x:Name="HotkeyError" Foreground="{ThemeResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" />
                 <ToggleSwitch x:Name="AutoConnectToggle" Header="Connect automatically when Windows starts playing and the headphones are nearby" Toggled="OnChanged" />
                 <ComboBox x:Name="MethodBox" Header="Connection method" Width="420" SelectionChanged="OnChanged">
-                    <ComboBoxItem Tag="ks" Content="Audio driver reconnect (recommended)" />
-                    <ComboBoxItem Tag="service" Content="Toggle Bluetooth services (fallback, slower)" />
+                    <ComboBoxItem Tag="hybrid" Content="Hybrid (recommended: fast connect, complete release)" />
+                    <ComboBoxItem Tag="ks" Content="Audio driver only (fast; release may not free the headphones)" />
+                    <ComboBoxItem Tag="service" Content="Toggle Bluetooth services only (slower)" />
                 </ComboBox>
             </StackPanel>
 
             <StackPanel Spacing="4">
                 <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="General" />
-                <ToggleSwitch x:Name="StartupToggle" Header="Start with Windows (in the tray)" Toggled="OnChanged" />
                 <ToggleSwitch x:Name="UnverifiedToggle" Header="Show unverified readings (single-source community data)" Toggled="OnChanged" />
             </StackPanel>
 

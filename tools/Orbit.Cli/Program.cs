@@ -60,6 +60,12 @@ internal static class Program
             orbit-cli analyze <file.csv>... [--group <prefixHex>]
                 Groups Proximity Pairing frames by device and lists bytes/bits that differ between tags.
 
+            orbit-cli connect|disconnect [--method hybrid|ks|service] [--watch <seconds>]
+                Switches the headphones to/from this PC (changes real state). Default method: hybrid.
+
+            orbit-cli diagnose | spatial
+                Read-only checks of the switching plumbing / Windows spatial sound.
+
             orbit-cli devices
                 Lists paired Bluetooth devices with their Device ID (vendor/product). Addresses are not printed.
             """);
@@ -160,7 +166,7 @@ internal static class Program
 
     /// <summary>
     /// Connects/disconnects the first paired Apple device via SwitchCoordinator, printing each step.
-    /// Usage: orbit-cli connect|disconnect [--method ks|service]. Changes real state: run only when asked to.
+    /// Usage: orbit-cli connect|disconnect [--method hybrid|ks|service] [--watch seconds]. Changes real state: run only when asked to.
     /// </summary>
     private static int Switch(string[] args, bool connect)
     {
@@ -172,12 +178,16 @@ internal static class Program
         }
 
         using var monitor = ConnectionMonitor.CreateAsync(device.DeviceId).GetAwaiter().GetResult()!;
-        Orbit.Core.Switching.IAudioConnector connector = Option(args, "--method") == "service"
-            ? new ServiceStateConnector(device.Address, device.Name)
-            : new KsAudioConnector(device.ContainerId!.Value);
-        var coordinator = new Orbit.Core.Switching.SwitchCoordinator(connector, monitor);
+        Orbit.Core.Switching.IAudioConnector connector = Option(args, "--method") switch
+        {
+            "service" => new ServiceStateConnector(device.Address, device.Name),
+            "ks" => new KsAudioConnector(device.ContainerId!.Value),
+            _ => new HybridConnector(device.ContainerId!.Value, device.Address, device.Name),
+        };
+        var audio = new AudioConnectionState(device.ContainerId!.Value);
+        var coordinator = new Orbit.Core.Switching.SwitchCoordinator(connector, audio);
 
-        Console.WriteLine($"{(connect ? "Connecting" : "Releasing")} {device.Name} using {connector.Name}; connected now={monitor.IsConnected}");
+        Console.WriteLine($"{(connect ? "Connecting" : "Releasing")} {device.Name} using {connector.Name}; audio connected now={audio.IsConnected}, link={monitor.IsConnected}");
         var started = DateTime.UtcNow;
         var result = (connect ? coordinator.ConnectAsync() : coordinator.ReleaseAsync()).GetAwaiter().GetResult();
         Console.WriteLine($"Result: {result.Outcome} after {result.Attempts} attempt(s), {(DateTime.UtcNow - started).TotalSeconds:0.0} s: {result.Message}");
@@ -185,11 +195,41 @@ internal static class Program
         {
             KsAudioConnector k => k.LastDiagnostics,
             ServiceStateConnector s => s.LastDiagnostics,
+            HybridConnector h => h.LastDiagnostics,
             _ => "",
         });
+
+        // --watch <seconds>: print Bluetooth link + audio endpoint state whenever it changes.
+        if (Option(args, "--watch") is { } w && int.TryParse(w, out var watchSeconds))
+        {
+            var probe = new KsAudioConnector(device.ContainerId!.Value);
+            var last = "";
+            var until = DateTime.UtcNow.AddSeconds(watchSeconds);
+            while (DateTime.UtcNow < until)
+            {
+                var endpoints = string.Join(", ", probe.GetEndpointStates().Select(e => $"{e.Name}={StateName(e.State)}"));
+                var line = $"link={(monitor.IsConnected ? "connected" : "disconnected")}  {endpoints}";
+                if (line != last)
+                {
+                    Console.WriteLine($"+{(DateTime.UtcNow - started).TotalSeconds,5:0.0}s  {line}");
+                    last = line;
+                }
+
+                Thread.Sleep(500);
+            }
+        }
         return result.Outcome is Orbit.Core.Switching.SwitchOutcome.Connected or Orbit.Core.Switching.SwitchOutcome.Released
             or Orbit.Core.Switching.SwitchOutcome.AlreadyConnected or Orbit.Core.Switching.SwitchOutcome.AlreadyReleased ? 0 : 1;
     }
+
+    private static string StateName(uint state) => state switch
+    {
+        1 => "active",
+        2 => "disabled",
+        4 => "notpresent",
+        8 => "unplugged",
+        _ => state.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    };
 
     /// <summary>Read-only: prints Windows spatial sound state for every paired Apple device's audio endpoints.</summary>
     private static int Spatial()

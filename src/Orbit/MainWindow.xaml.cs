@@ -22,6 +22,12 @@ public sealed partial class MainWindow : Window
             }
         };
 
+        ContentFrame.NavigationFailed += (_, e) =>
+        {
+            Services.Log.Error($"navigation to {e.SourcePageType?.Name}", e.Exception);
+            e.Handled = true;
+        };
+
         Nav.SelectedItem = Nav.MenuItems[0];
     }
 
@@ -37,7 +43,14 @@ public sealed partial class MainWindow : Window
 
         if (pageType is not null && ContentFrame.CurrentSourcePageType != pageType)
         {
-            ContentFrame.Navigate(pageType);
+            try
+            {
+                ContentFrame.Navigate(pageType);
+            }
+            catch (Exception ex)
+            {
+                Services.Log.Error($"navigate {pageType.Name}", ex);
+            }
         }
     }
 }

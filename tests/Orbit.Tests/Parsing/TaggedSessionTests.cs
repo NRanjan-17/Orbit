@@ -55,6 +55,41 @@ public class TaggedSessionTests
         }
     }
 
+    private sealed class PlayingMedia : Orbit.Core.Media.IMediaController
+    {
+        public bool Playing { get; set; } = true;
+
+        public Task<Orbit.Core.Media.MediaState?> GetCurrentAsync() =>
+            Task.FromResult<Orbit.Core.Media.MediaState?>(new("player", Playing));
+
+        public Task<bool> PauseAsync(string id) { Playing = false; return Task.FromResult(true); }
+
+        public Task<bool> PlayAsync(string id) { Playing = true; return Task.FromResult(true); }
+    }
+
+    [Fact]
+    public async Task FastAutoPauseOnRealSessionActsOncePerTransition()
+    {
+        // Replays the whole capture with music playing: off -> on -> off -> on -> off (Smart Case, unknown) -> on.
+        var controller = new Orbit.Core.Media.AutoPauseController(new PlayingMedia(), requiredReadings: 1, minimumDuration: TimeSpan.Zero);
+        var actions = new List<Orbit.Core.Media.AutoPauseAction>();
+        foreach (var frame in Session.Where(r => r.Kind == RecordKind.Advertisement))
+        {
+            var status = ProximityPairingParser.Parse(frame.Payload, ModelRegistry.WithBound(Bound))!;
+            var a = await controller.OnReadingAsync(status.Worn, frame.TimestampUtc);
+            if (a != Orbit.Core.Media.AutoPauseAction.None)
+            {
+                actions.Add(a);
+            }
+        }
+
+        // First "on" resumes nothing (Orbit had not paused); then every off pauses and every on resumes.
+        Assert.Equal(
+            [Orbit.Core.Media.AutoPauseAction.Paused, Orbit.Core.Media.AutoPauseAction.Resumed,
+             Orbit.Core.Media.AutoPauseAction.Paused, Orbit.Core.Media.AutoPauseAction.Resumed],
+            actions);
+    }
+
     [Fact]
     public void InCaseWhileChargingIsNotMistakenForOnHead()
     {

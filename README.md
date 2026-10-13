@@ -58,9 +58,12 @@ multi-source community values are marked *(unverified)*, single-source values ar
 | "Connected to another device" bit | ❌ Not present in unencrypted bytes (verified) |
 | Other AirPods models (LibrePods rules, cross-checked with AirPodsDesktop/OpenPods) | ⚠️ Unverified on real hardware; decoder matches AirPodsDesktop's sanitised AirPods 5 captures |
 | Auto-pause / resume logic | ✅ Unit-tested; ⏳ not yet tried with real playback |
-| Switch to this PC / Release (KS one-shot, service-toggle fallback) | ✅ Plumbing checked read-only; ⏳ connect/disconnect not yet tried |
-| Windows spatial sound selector | ⏳ Not yet tried (needs the Max connected) |
-| Tray, flyout, toasts, start with Windows, hotkey | ⏳ Built; UI not yet checked on screen |
+| Switch to this PC (incl. while the Mac is playing) | ✅ Verified: 3–4 s |
+| Release to other device (hybrid: KS + service toggle) | ✅ Service-toggle release verified; ⏳ hybrid release → Mac connect to confirm |
+| Status page with live data (battery, charging, on head, signal) | ✅ Seen on screen |
+| Chime in the headphones (Orbit's own sound) | ⏳ Built; listen test needed |
+| Windows spatial sound selector | ⏳ Not yet tried |
+| Tray, flyout, toasts, start with Windows, hotkey, auto-connect | ⏳ Built; not yet tried |
 
 ## Known limits
 - **Noise control and Apple Spatial Audio: not available on Windows.** They need Apple's accessory protocol over
@@ -73,8 +76,10 @@ multi-source community values are marked *(unverified)*, single-source values ar
 - **Battery resolution is 10 %**, because that is all the advertisement carries.
 - **Media apps without a Windows media session** (some browser players, older apps) cannot be auto-paused.
 - **Smart App Control** can block the unsigned build. Choices: sign the build with a certificate Windows
-  trusts (e.g. a code-signing service), run it on a PC where Smart App Control is off, or turn Smart App
-  Control off (Windows Security → App & browser control; it cannot be turned back on without resetting Windows).
+  trusts (e.g. a code-signing service), or turn Smart App Control off (Windows Security → App & browser
+  control). On older Windows 11 builds turning it off was one-way; current builds let you switch it back on.
+- **The headphones' own connection chime can't be triggered** (it needs Apple's accessory protocol). Orbit can
+  play its own short chime through the headphones instead (Settings → Chime).
 
 ## Test checklist (your hardware)
 1. **Status:** Max out of the case, near the PC → Status shows battery range and *On head / Off head* within a
@@ -89,6 +94,8 @@ multi-source community values are marked *(unverified)*, single-source values ar
 6. **Spatial sound:** with the Max connected to the PC, pick Windows Sonic on the Status page; check Windows
    Settings → Sound shows the same.
 7. **Tray:** hover → tooltip with battery; click → flyout; right-click → menu; Exit quits.
+7a. **Chime:** Settings → *Test chime* plays in the headphones (not the laptop speakers); with *chime on put-on*
+   enabled, putting the headphones on plays it a few seconds later.
 8. **Low battery:** only testable when the battery reaches the threshold (default 20 %); expect one toast.
 9. **Start with Windows:** enable in Settings, sign out and in → Orbit starts in the tray.
 

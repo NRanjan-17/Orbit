@@ -29,6 +29,10 @@ public sealed class AppleAdvertisementScanner : IDisposable
             // Active scanning also yields scan-response packets; harmless and useful when capturing.
             ScanningMode = activeScanning ? BluetoothLEScanningMode.Active : BluetoothLEScanningMode.Passive,
         };
+
+        // Report every advertisement rather than letting Windows sample them by signal strength; auto-pause
+        // latency depends on seeing the first frame after the headphones change state.
+        _watcher.SignalStrengthFilter.SamplingInterval = TimeSpan.Zero;
         _watcher.Received += OnReceived;
         _watcher.Stopped += OnStopped;
     }
