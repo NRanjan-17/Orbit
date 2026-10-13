@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Orbit.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="20" MaxWidth="760" HorizontalAlignment="Left">
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Settings" />
+
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Signal threshold" />
+                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Ignore advertisements weaker than this. Next to you is usually -35 to -60 dBm; across a room is -75 or weaker." />
+                <Slider x:Name="RssiSlider" Minimum="-95" Maximum="-40" StepFrequency="1" MaxWidth="420" HorizontalAlignment="Left"
+                        Width="420" ValueChanged="OnChanged" />
+                <TextBlock x:Name="RssiValue" />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Auto-pause" />
+                <ToggleSwitch x:Name="AutoPauseToggle" Header="Pause when I take the headphones off" Toggled="OnChanged" />
+                <ToggleSwitch x:Name="AutoResumeToggle" Header="Resume when I put them back on (only if Orbit paused it)" Toggled="OnChanged" />
+                <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Uses only on-head readings verified on your device, and requires a consistent reading for about 1.5 seconds." />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Notifications" />
+                <ToggleSwitch x:Name="LowBatteryToggle" Header="Low-battery notification" Toggled="OnChanged" />
+                <NumberBox x:Name="LowBatteryBox" Header="Warn at or below (%)" Minimum="10" Maximum="50" SmallChange="10"
+                           SpinButtonPlacementMode="Inline" Width="200" HorizontalAlignment="Left" ValueChanged="OnNumberChanged" />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="General" />
+                <ToggleSwitch x:Name="StartupToggle" Header="Start with Windows (in the tray)" Toggled="OnChanged" />
+                <ToggleSwitch x:Name="UnverifiedToggle" Header="Show unverified readings (single-source community data)" Toggled="OnChanged" />
+            </StackPanel>
+
+            <TextBlock x:Name="SavedText" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

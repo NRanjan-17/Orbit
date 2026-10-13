@@ -34,6 +34,7 @@ internal static class Program
                 "capture" => Capture(args.Skip(1).ToArray()),
                 "analyze" or "analyse" => Analyze(args.Skip(1).ToArray()),
                 "devices" => Devices(),
+                "spatial" => Spatial(),
                 _ => Usage(),
             };
         }
@@ -138,6 +139,27 @@ internal static class Program
         return 0;
 
         static string Fmt(ushort? v) => v is { } x ? $"0x{x:X4}" : "-";
+    }
+
+    /// <summary>Read-only: prints Windows spatial sound state for every paired Apple device's audio endpoints.</summary>
+    private static int Spatial()
+    {
+        foreach (var d in PairedDeviceCatalog.GetPairedAsync().GetAwaiter().GetResult().Where(d => d.IsApple && d.ContainerId is not null))
+        {
+            Console.WriteLine(d.Name);
+            var states = Orbit.Platform.Audio.SpatialSoundController.GetForContainerAsync(d.ContainerId!.Value).GetAwaiter().GetResult();
+            if (states.Count == 0)
+            {
+                Console.WriteLine("  (no active render endpoint; connect the device to this PC)");
+            }
+
+            foreach (var s in states)
+            {
+                Console.WriteLine($"  {s.EndpointName}: supported={s.Supported} active={Orbit.Platform.Audio.SpatialSoundController.NameOf(s.ActiveSubtype)} available=[{string.Join(", ", s.AvailableFormats.Select(f => f.Name))}]");
+            }
+        }
+
+        return 0;
     }
 
     private static int Analyze(string[] args)

@@ -34,11 +34,28 @@ public static class PairedDeviceCatalog
     private const string VendorIdSourceKey = "System.DeviceInterface.Bluetooth.VendorIdSource";
     private const string ContainerIdKey = "System.Devices.ContainerId";
 
+    // Association-endpoint form; AirPodsDesktop matches audio endpoints with this (QuickConnect_win.cpp L40).
+    private const string AepContainerIdKey = "System.Devices.Aep.ContainerId";
+
+    /// <summary>The container groups the Bluetooth device with its audio endpoints (Headphones/Headset).</summary>
+    private static Guid? ContainerOf(DeviceInformation info)
+    {
+        foreach (var key in new[] { ContainerIdKey, AepContainerIdKey })
+        {
+            if (info.Properties.TryGetValue(key, out var v) && v is Guid g && g != Guid.Empty)
+            {
+                return g;
+            }
+        }
+
+        return null;
+    }
+
     public static async Task<IReadOnlyList<PairedDevice>> GetPairedAsync()
     {
         var infos = await DeviceInformation.FindAllAsync(
             BluetoothDevice.GetDeviceSelectorFromPairingState(true),
-            [VendorIdKey, ProductIdKey, VendorIdSourceKey, ContainerIdKey]);
+            [VendorIdKey, ProductIdKey, VendorIdSourceKey, ContainerIdKey, AepContainerIdKey]);
 
         var result = new List<PairedDevice>();
         foreach (var info in infos)
@@ -57,7 +74,7 @@ public static class PairedDeviceCatalog
                 AsUShort(info.Properties, VendorIdKey),
                 AsUShort(info.Properties, ProductIdKey),
                 info.Properties.TryGetValue(VendorIdSourceKey, out var src) && src is byte b ? b : null,
-                info.Properties.TryGetValue(ContainerIdKey, out var c) && c is Guid g ? g : null,
+                ContainerOf(info),
                 device.ClassOfDevice.RawValue));
         }
 

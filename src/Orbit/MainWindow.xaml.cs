@@ -9,17 +9,28 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        ExtendsContentIntoTitleBar = false;
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1100, 760));
-        AppWindow.SetIcon("Assets\\Orbit.ico");
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 780));
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Orbit.ico"));
+
+        // Closing the window keeps Orbit running in the tray; Exit is in the tray menu.
+        AppWindow.Closing += (_, e) =>
+        {
+            if (Application.Current is App { IsExiting: false })
+            {
+                e.Cancel = true;
+                AppWindow.Hide();
+            }
+        };
+
         Nav.SelectedItem = Nav.MenuItems[0];
     }
 
     private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        var tag = (args.SelectedItem as NavigationViewItem)?.Tag as string;
-        var pageType = tag switch
+        var pageType = ((args.SelectedItem as NavigationViewItem)?.Tag as string) switch
         {
+            "status" => typeof(StatusPage),
+            "settings" => typeof(SettingsPage),
             "capture" => typeof(CapturePage),
             _ => null,
         };

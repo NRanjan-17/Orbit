@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Orbit.FlyoutWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Orbit">
+    <Window.SystemBackdrop>
+        <DesktopAcrylicBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid Padding="20" RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Image Source="Assets/Orbit.png" Width="24" Height="24" />
+            <TextBlock x:Name="NameText" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+        </StackPanel>
+
+        <TextBlock x:Name="BatteryText" Grid.Row="1" Style="{StaticResource TitleTextBlockStyle}" />
+
+        <StackPanel Grid.Row="2" Spacing="2">
+            <TextBlock x:Name="WornText" />
+            <TextBlock x:Name="ChargingText" />
+            <TextBlock x:Name="PresenceText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8">
+            <ToggleButton x:Name="AutoPauseButton" Content="Auto-pause" Click="OnAutoPauseClick" />
+            <Button Content="Open Orbit" Click="OnOpenClick" />
+        </StackPanel>
+    </Grid>
+</Window>

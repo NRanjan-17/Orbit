@@ -49,5 +49,13 @@ Consequences in Orbit:
   A second reading at a different level would strengthen this (README test checklist).
 - Charging stays unverified (shown only with "Show unverified readings").
 
+## F5. Max stops advertising when idle / charging — OBSERVED (2026-10-13 23:19)
+- Max plugged into the PC by USB-C for charging, not connected over Bluetooth: 45 s capture had **zero**
+  Proximity Pairing frames from it, while 403 frames from other nearby Apple devices were received.
+- Consequence: Orbit treats "not heard for 20 s" as *asleep or out of range* and shows the last known values
+  with their time, instead of stale values presented as current. Auto-pause forgets any held pause.
+- Open question: whether picking the Max up (motion wake) while it stays plugged in restarts advertising,
+  and whether the charging bit (`d[7] & 0x10`) is then stable. Needs one more capture.
+
 Until a field is VERIFIED, Orbit shows it as "unknown" (or with an "unverified" badge when the user
 turns on *Show unverified readings*), and never acts on it automatically (e.g. auto-pause stays off).

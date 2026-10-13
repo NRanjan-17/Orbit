@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Orbit.Pages.StatusPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Page.Resources>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="20" />
+        </Style>
+        <Style x:Key="Label" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Status" />
+
+            <InfoBar x:Name="ScannerInfo" Severity="Error" IsClosable="False" />
+
+            <!-- Device -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <FontIcon Glyph="&#xE7F6;" FontSize="28" />
+                        <StackPanel>
+                            <TextBlock x:Name="DeviceName" Style="{StaticResource SubtitleTextBlockStyle}" Text="No device" />
+                            <TextBlock x:Name="DeviceModel" Style="{StaticResource Label}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock x:Name="Presence" TextWrapping="Wrap" />
+
+                    <Grid ColumnSpacing="24" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource Label}" Text="Battery" />
+                        <TextBlock x:Name="BatteryText" Grid.Column="1" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Unknown" />
+                        <TextBlock Grid.Row="1" Style="{StaticResource Label}" Text="Charging" />
+                        <TextBlock x:Name="ChargingText" Grid.Row="1" Grid.Column="1" Text="Unknown" />
+                        <TextBlock Grid.Row="2" Style="{StaticResource Label}" Text="Worn" />
+                        <TextBlock x:Name="WornText" Grid.Row="2" Grid.Column="1" Text="Unknown" />
+                        <TextBlock Grid.Row="3" Style="{StaticResource Label}" Text="Signal" />
+                        <TextBlock x:Name="SignalText" Grid.Row="3" Grid.Column="1" Text="-" />
+                        <TextBlock Grid.Row="4" Style="{StaticResource Label}" Text="Auto-pause" />
+                        <TextBlock x:Name="AutoPauseText" Grid.Row="4" Grid.Column="1" TextWrapping="Wrap" Text="-" />
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"
+                               Text="Battery is advertised in 10% steps, so it is shown as a range. Values marked (unverified) come from community documentation and have not been confirmed on this model." />
+                </StackPanel>
+            </Border>
+
+            <!-- Binding -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Your device" />
+                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
+                               Text="Orbit recognises your headphones by the Device ID Windows reports for the paired device. Only advertisements from that model are shown. The choice is stored on this PC only." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox x:Name="DevicePicker" MinWidth="320" DisplayMemberPath="Name" SelectionChanged="OnDevicePicked" />
+                        <Button Content="Refresh" Click="OnRefreshDevices" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Spatial sound -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Spatial sound (Windows)" />
+                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
+                               Text="Windows' own spatial sound for the headphones' output. Apple's head-tracked Spatial Audio is not available on Windows: it needs the Apple control channel (L2CAP), which Windows does not expose." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox x:Name="SpatialPicker" MinWidth="320" IsEnabled="False" SelectionChanged="OnSpatialPicked" />
+                        <Button Content="Windows sound settings" Click="OnOpenSoundSettings" />
+                    </StackPanel>
+                    <TextBlock x:Name="SpatialStatus" Style="{StaticResource Label}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Noise control -->
+            <Border Style="{StaticResource Card}" Opacity="0.6">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Noise control" />
+                    <RadioButtons IsEnabled="False" MaxColumns="3">
+                        <x:String>Off</x:String>
+                        <x:String>Noise Cancellation</x:String>
+                        <x:String>Transparency</x:String>
+                    </RadioButtons>
+                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
+                               Text="Not available on Windows. Noise control uses Apple's accessory protocol over L2CAP, which Windows has no public API for, and the current mode is not readable from Bluetooth advertisements (verified in captures). Use the button on the headphones. See docs/noise-control.md." />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
