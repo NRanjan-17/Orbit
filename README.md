@@ -51,6 +51,8 @@ git tag v0.2.0
 git push origin v0.2.0      # or: Actions → Release → Run workflow, with a version
 ```
 `.github/workflows/ci.yml` builds and tests every push to `main` and every pull request.
+Code signing via SignPath Foundation (free for open source) is prepared in the release workflow and switches on
+once its GitHub settings exist: [docs/signing.md](docs/signing.md).
 
 ## Using Orbit
 On first start Orbit binds to your paired Apple headphones automatically (or choose them on the Status page).

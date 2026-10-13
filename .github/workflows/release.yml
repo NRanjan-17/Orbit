@@ -24,6 +24,10 @@ jobs:
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
+      # Code signing via SignPath Foundation (free for open-source projects). Signing runs only when these
+      # repository variables are set (Settings > Secrets and variables > Actions > Variables), plus the
+      # SIGNPATH_API_TOKEN secret. Without them the release is published unsigned. See docs/signing.md.
+      SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,6 +68,35 @@ jobs:
             -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:Version=$v -o publish/cli
           if ($LASTEXITCODE -ne 0) { throw "cli publish failed" }
           Compress-Archive -Path publish/cli/orbit-cli.exe -DestinationPath "dist/orbit-cli-$v-win-x64.zip"
+
+      - name: Upload unsigned build
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbit-unsigned
+          path: dist/*.zip
+          if-no-files-found: error
+
+      - name: Sign with SignPath
+        if: env.SIGNPATH_ORGANIZATION_ID != ''
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Use signed zips
+        if: env.SIGNPATH_ORGANIZATION_ID != ''
+        shell: pwsh
+        run: |
+          $signed = Get-ChildItem signed -Recurse -Filter *.zip
+          if (-not $signed) { throw "SignPath returned no zips" }
+          $signed | Copy-Item -Destination dist -Force
+          $signed | ForEach-Object { Write-Host "signed: $($_.Name)" }
 
       - name: Checksums
         shell: pwsh
