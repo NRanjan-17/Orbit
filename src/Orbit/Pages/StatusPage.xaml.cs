@@ -153,7 +153,6 @@ public sealed partial class StatusPage : Page
         if (shown is null)
         {
             BatteryText.Text = "-";
-            BatteryRing.Value = 0;
             Wear.IsWorn = null;
             WornText.Text = "Worn: unknown";
             ChargingText.Text = "Charging: unknown";
@@ -165,11 +164,6 @@ public sealed partial class StatusPage : Page
             BatteryText.Text = st.Form == Core.Parsing.DeviceForm.Earbuds
                 ? $"L {Display.Battery(st.LeftBattery, show)} · R {Display.Battery(st.RightBattery, show)} · Case {Display.Battery(st.CaseBattery, show)}"
                 : Display.BatteryOf(st, show);
-
-            // Ring: exact value when available, otherwise the middle of the advertised 10 % range.
-            var ring = st.ExactBattery.HasValue ? st.ExactBattery.Value
-                : st.LowestBattery.HasValue ? Math.Min(100, st.LowestBattery.Value + 5) : 0;
-            BatteryRing.Value = ring;
 
             var charging = Display.Flag(st.Form == Core.Parsing.DeviceForm.Earbuds ? st.CaseCharging : st.Charging, show, "Charging", "Not charging");
             ChargingText.Text = charging == "Unknown" ? "Charging: unknown" : charging;

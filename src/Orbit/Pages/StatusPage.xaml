@@ -47,11 +47,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <Grid Width="120" Height="120" VerticalAlignment="Center">
-                            <ProgressRing x:Name="BatteryRing" IsIndeterminate="False" Width="120" Height="120" Value="0"
-                                          Background="{ThemeResource SubtleFillColorSecondaryBrush}" />
-                            <controls:WearIndicator x:Name="Wear" Width="96" Height="96" />
-                        </Grid>
+                        <controls:WearIndicator x:Name="Wear" Width="120" Height="120" VerticalAlignment="Center" />
 
                         <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                             <TextBlock x:Name="DeviceName" Style="{StaticResource SubtitleTextBlockStyle}" TextTrimming="CharacterEllipsis" Text="No device" />
