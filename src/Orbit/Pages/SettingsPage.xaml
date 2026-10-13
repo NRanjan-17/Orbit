@@ -57,7 +57,7 @@
                     <TextBlock Style="{StaticResource RowTitle}" Text="Start with Windows" />
                     <TextBlock Style="{StaticResource RowDescription}" Text="Starts quietly in the system tray. Your account only, no admin rights needed." />
                 </StackPanel>
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="StartupToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="StartupToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -66,7 +66,7 @@
                     <TextBlock Style="{StaticResource RowTitle}" Text="Show unverified readings" />
                     <TextBlock Style="{StaticResource RowDescription}" Text="Also show values backed by a single community source, marked (unverified)." />
                 </StackPanel>
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="UnverifiedToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="UnverifiedToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -89,7 +89,7 @@
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Pause when I take the headphones off" />
                 </StackPanel>
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="AutoPauseToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="AutoPauseToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -98,7 +98,7 @@
                     <TextBlock Style="{StaticResource RowTitle}" Text="Resume when I put them back on" />
                     <TextBlock Style="{StaticResource RowDescription}" Text="Only playback that Orbit paused." />
                 </StackPanel>
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="AutoResumeToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="AutoResumeToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -131,7 +131,7 @@
                     <TextBlock Style="{StaticResource RowTitle}" Text="Connect automatically" />
                     <TextBlock Style="{StaticResource RowDescription}" Text="When Windows starts playing and the headphones are nearby but not connected." />
                 </StackPanel>
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="AutoConnectToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="AutoConnectToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -155,7 +155,7 @@
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Chime when Orbit connects the headphones" />
                 </StackPanel>
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="ChimeConnectToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="ChimeConnectToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -164,7 +164,7 @@
                     <TextBlock Style="{StaticResource RowTitle}" Text="Chime when I put the headphones on" />
                     <TextBlock Style="{StaticResource RowDescription}" Text="While connected to this PC. Orbit's own sound; the built-in chime can't be triggered from Windows." />
                 </StackPanel>
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="ChimePutOnToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="ChimePutOnToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -185,7 +185,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                     <NumberBox x:Name="LowBatteryBox" Minimum="10" Maximum="50" SmallChange="10" SpinButtonPlacementMode="Compact" Width="90" ValueChanged="OnNumberChanged" />
                     <TextBlock Text="%" VerticalAlignment="Center" />
-                    <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="LowBatteryToggle" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                    <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="LowBatteryToggle" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
                 </StackPanel>
             </Grid>
 

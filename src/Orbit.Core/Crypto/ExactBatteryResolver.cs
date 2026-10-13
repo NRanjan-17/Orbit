@@ -44,14 +44,39 @@ public sealed class ExactBatteryResolver
     private int _frames;
     private int _chosen = -1;
 
-    public ExactBatteryResolver(byte[]? key)
+    /// <param name="key">The key as the user entered it.</param>
+    /// <param name="previouslyConfirmedReversed">
+    /// When this key was confirmed in an earlier session: null = not confirmed (check it now), false/true = it
+    /// was confirmed in entered/reversed byte order, so start Confirmed and skip the slow check.
+    /// </param>
+    public ExactBatteryResolver(byte[]? key, bool? previouslyConfirmedReversed = null)
     {
         _candidates = key is { Length: 16 } ? [key, key.Reverse().ToArray()] : [];
         _levels = _candidates.Select(_ => new List<int>()).ToArray();
         State = _candidates.Length == 0 ? KeyState.None : KeyState.Checking;
+        if (State == KeyState.Checking && previouslyConfirmedReversed is { } reversed)
+        {
+            _chosen = reversed ? 1 : 0;
+            State = KeyState.Confirmed;
+        }
     }
 
+    /// <summary>
+    /// After this many DIFFERENT broadcasts in a row fail to decode while Confirmed, the key is treated as no longer
+    /// valid (e.g. the headphones were reset) and checking starts again.
+    /// </summary>
+    public const int RecheckAfterFailures = 5;
+
+    private int _consecutiveFailures;
+    private string? _lastConfirmedTail;
+
     public KeyState State { get; private set; }
+
+    /// <summary>
+    /// Set when the owner compared the decoded value with the battery shown on their Mac and confirmed it
+    /// matches. Raises the reported confidence to VerifiedOnDevice.
+    /// </summary>
+    public bool UserVerified { get; set; }
 
     /// <summary>True when the confirmed key was the reversed byte order of what the user entered.</summary>
     public bool UsedReversedKey => _chosen == 1;
@@ -82,6 +107,24 @@ public sealed class ExactBatteryResolver
         if (State == KeyState.Confirmed)
         {
             var value = Decode(ProximityKey.DecryptBlock(frame.EncryptedTail, _candidates[_chosen]), coarse);
+            var tail = Convert.ToHexString(frame.EncryptedTail);
+            if (tail != _lastConfirmedTail)
+            {
+                _lastConfirmedTail = tail;
+                _consecutiveFailures = value is null ? _consecutiveFailures + 1 : 0;
+                if (_consecutiveFailures >= RecheckAfterFailures)
+                {
+                    // Persistently implausible: the stored key no longer fits these headphones. Check again.
+                    State = KeyState.Checking;
+                    _chosen = -1;
+                    _consecutiveFailures = 0;
+                    foreach (var l in _levels)
+                    {
+                        l.Clear();
+                    }
+                }
+            }
+
             return value;
         }
 

@@ -72,8 +72,10 @@ public sealed class DeviceTracker
             // coarse reading; exact digits are not yet confirmed against the Mac -> Corroborated.
             status = status with
             {
-                ExactBattery = new Reading<int>(exact.Level, Confidence.Corroborated,
-                    "Decrypted with your key (LibrePods battery.hpp L157-217, CAPod ApplePods.kt)"),
+                ExactBattery = resolver.UserVerified
+                    ? new Reading<int>(exact.Level, Confidence.VerifiedOnDevice, "Decrypted with your key; owner confirmed it matches the Mac")
+                    : new Reading<int>(exact.Level, Confidence.Corroborated,
+                        "Decrypted with your key (LibrePods battery.hpp L157-217, CAPod ApplePods.kt)"),
             };
         }
         var smoothed = _candidates.TryGetValue(key, out var prev) ? prev.SmoothedRssi * 0.7 + rssi * 0.3 : rssi;

@@ -27,6 +27,15 @@ public sealed class OrbitSettings
 
     public bool StartWithWindows { get; set; }
 
+    /// <summary>Short SHA-256 fingerprint of the exact-battery key that was confirmed (not the key itself).</summary>
+    public string? ExactKeyFingerprint { get; set; }
+
+    /// <summary>Byte order the confirmed key works in (true = reversed), so later launches skip re-checking.</summary>
+    public bool? ExactKeyReversed { get; set; }
+
+    /// <summary>Fingerprint of the key whose exact battery the owner confirmed matches their Mac.</summary>
+    public string? ExactBatteryVerifiedFingerprint { get; set; }
+
     public bool LowBatteryToast { get; set; } = true;
 
     /// <summary>Warn when the advertised battery drops to or below this percent.</summary>

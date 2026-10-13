@@ -65,7 +65,7 @@
                 </Grid.ColumnDefinitions>
                 <FontIcon Glyph="&#xE769;" FontSize="16" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Auto-pause" VerticalAlignment="Center" />
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="AutoPauseSwitch" Grid.Column="2" OnContent="" OffContent="" Toggled="OnAutoPauseToggled" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="AutoPauseSwitch" Grid.Column="2" OnContent="" OffContent="" Toggled="OnAutoPauseToggled" />
             </Grid>
             <Grid Padding="11,0" MinHeight="34" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
@@ -75,7 +75,7 @@
                 </Grid.ColumnDefinitions>
                 <FontIcon Glyph="&#xE7B5;" FontSize="16" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Start with Windows" VerticalAlignment="Center" />
-                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="StartupSwitch" Grid.Column="2" OnContent="" OffContent="" Toggled="OnStartupToggled" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="StartupSwitch" Grid.Column="2" OnContent="" OffContent="" Toggled="OnStartupToggled" />
             </Grid>
 
             <MenuFlyoutSeparator />
@@ -95,7 +95,7 @@
             <Button Style="{StaticResource MenuButton}" Click="OnExit">
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <FontIcon Glyph="&#xE7E8;" FontSize="16" />
-                    <TextBlock Text="Quit Orbit" />
+                    <TextBlock Text="Quit" />
                 </StackPanel>
             </Button>
         </StackPanel>

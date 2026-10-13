@@ -72,6 +72,28 @@ public class ExactBatteryTests
     }
 
     [Fact]
+    public void RememberedKeyShowsExactBatteryImmediately()
+    {
+        var tracker = new DeviceTracker(Bound) { Exact = new ExactBatteryResolver(Key, previouslyConfirmedReversed: false) };
+        var status = tracker.Add(Frame(6, 64, false, Key), -40, T0);
+        Assert.Equal(KeyState.Confirmed, tracker.Exact!.State);
+        Assert.Equal(64, status!.ExactBattery.Value); // first broadcast, no 3-broadcast wait
+    }
+
+    [Fact]
+    public void RememberedKeyThatStopsWorkingIsCheckedAgain()
+    {
+        var other = Convert.FromHexString("F0E0D0C0B0A090807060504030201000");
+        var tracker = new DeviceTracker(Bound) { Exact = new ExactBatteryResolver(other, previouslyConfirmedReversed: false) };
+        for (var i = 0; i < ExactBatteryResolver.RecheckAfterFailures; i++)
+        {
+            Assert.False(tracker.Add(Frame(6, 64, false, Key), -40, T0.AddSeconds(i))!.ExactBattery.HasValue);
+        }
+
+        Assert.Equal(KeyState.Checking, tracker.Exact!.State);
+    }
+
+    [Fact]
     public void RepeatedCiphertextIsNotNewEvidence()
     {
         // The bug seen on the real device: one ciphertext repeated must never confirm a key.

@@ -190,13 +190,77 @@ public sealed class OrbitService : IDisposable
         {
             _loggedKeyState = exact.State;
             Log.Write($"exact battery key state: {exact.State}{(exact.UsedReversedKey ? " (reversed byte order)" : "")}");
+            RememberKeyConfirmation(exact);
         }
+    }
+
+    /// <summary>
+    /// Remembers that the stored key was confirmed (and in which byte order) so the next launch can show the
+    /// exact battery immediately instead of re-checking for minutes. Stored as a short SHA-256 fingerprint of
+    /// the key, never the key itself.
+    /// </summary>
+    private void RememberKeyConfirmation(Core.Crypto.ExactBatteryResolver exact)
+    {
+        var key = _keyStore.Load();
+        if (exact.State == Core.Crypto.KeyState.Confirmed && key is not null)
+        {
+            Settings.ExactKeyFingerprint = KeyFingerprint(key);
+            Settings.ExactKeyReversed = exact.UsedReversedKey;
+        }
+        else if (exact.State is Core.Crypto.KeyState.Rejected or Core.Crypto.KeyState.Checking)
+        {
+            Settings.ExactKeyFingerprint = null;
+            Settings.ExactKeyReversed = null;
+        }
+
+        Store.Save(Settings);
+    }
+
+    private static string KeyFingerprint(byte[] key) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(key).AsSpan(0, 8));
+
+    /// <summary>Resolver for the stored key, starting Confirmed when this exact key was confirmed before.</summary>
+    private Core.Crypto.ExactBatteryResolver? CreateResolver()
+    {
+        if (_keyStore.Load() is not { } key)
+        {
+            return null;
+        }
+
+        var fingerprint = KeyFingerprint(key);
+        var remembered = Settings.ExactKeyFingerprint == fingerprint ? Settings.ExactKeyReversed : null;
+        return new Core.Crypto.ExactBatteryResolver(key, remembered)
+        {
+            UserVerified = Settings.ExactBatteryVerifiedFingerprint == fingerprint,
+        };
+    }
+
+    /// <summary>True when the owner confirmed the exact battery matches their Mac for the stored key.</summary>
+    public bool ExactBatteryVerified => _tracker.Exact?.UserVerified == true;
+
+    /// <summary>Owner confirms the decoded exact battery matches the battery shown on their Mac.</summary>
+    public void MarkExactBatteryVerified()
+    {
+        if (_keyStore.Load() is not { } key || _tracker.Exact is not { } exact)
+        {
+            return;
+        }
+
+        exact.UserVerified = true;
+        Settings.ExactBatteryVerifiedFingerprint = KeyFingerprint(key);
+        Store.Save(Settings);
+        Log.Write($"exact battery verified by owner against Mac (Orbit showed {LastKnown?.Status.ExactBattery.Value}%)");
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     public void RemoveKey()
     {
         _keyStore.Delete();
         _tracker.Exact = null;
+        Settings.ExactKeyFingerprint = null;
+        Settings.ExactKeyReversed = null;
+        Settings.ExactBatteryVerifiedFingerprint = null;
+        Store.Save(Settings);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -206,8 +270,9 @@ public sealed class OrbitService : IDisposable
         BoundProfile = device is null ? null : BoundDeviceProfile.Create(device.Name, device.VendorId, device.ProductId, device.ClassOfDevice);
         _tracker = new DeviceTracker(BoundProfile, Settings.RssiThreshold)
         {
-            Exact = _keyStore.Load() is { } key ? new Core.Crypto.ExactBatteryResolver(key) : null,
+            Exact = CreateResolver(),
         };
+        _loggedKeyState = _tracker.Exact?.State ?? Core.Crypto.KeyState.None;
         _autoPause = CreateAutoPause();
         LastKnown = null;
         Changed?.Invoke(this, EventArgs.Empty);

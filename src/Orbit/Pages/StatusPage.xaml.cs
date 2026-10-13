@@ -87,16 +87,36 @@ public sealed partial class StatusPage : Page
     {
         var state = _service!.KeyState;
         RemoveKeyButton.IsEnabled = _service.HasStoredKey;
+        RenderMacCheck();
         KeyStatus.Text = state switch
         {
             Core.Crypto.KeyState.None => "No key: battery is shown in 10% steps.",
             Core.Crypto.KeyState.Checking => _service.KeyProgress is var (seen, ok)
                 ? $"Checking key: {ok} of {Core.Crypto.ExactBatteryResolver.ConfirmAfter} matching broadcasts ({seen} examined). The headphones change their broadcast every few seconds to a few minutes."
                 : "",
-            Core.Crypto.KeyState.Confirmed => "Key confirmed: showing exact battery.",
+            Core.Crypto.KeyState.Confirmed => _service.ExactBatteryVerified
+                ? "Showing exact battery (checked against your Mac)."
+                : "Key confirmed: showing exact battery. Compare it with your Mac once to verify.",
             Core.Crypto.KeyState.Rejected => "This key does not decrypt these headphones' broadcasts. Check that you copied MagicAccEncKey (not MagicAccIRK) for this device.",
             _ => "",
         };
+    }
+
+    private void RenderMacCheck()
+    {
+        var exact = (_service!.Current ?? _service.LastKnown)?.Status.ExactBattery;
+        var show = _service.KeyState == Core.Crypto.KeyState.Confirmed && !_service.ExactBatteryVerified && exact is { HasValue: true };
+        MacCheck.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (show)
+        {
+            MacCheckText.Text = $"Orbit shows {exact!.Value.Value}%. Open the Bluetooth (or Battery) menu on your Mac and compare. If the Mac shows the same number, confirm it here.";
+        }
+    }
+
+    private void OnExactMatchesMac(object sender, RoutedEventArgs e)
+    {
+        _service!.MarkExactBatteryVerified();
+        RenderKey();
     }
 
     private void OnSaveKey(object sender, RoutedEventArgs e)
@@ -250,7 +270,11 @@ public sealed partial class StatusPage : Page
             _spatialEndpointId = state.EndpointId;
             SpatialPicker.Tag = state.AvailableFormats;
             SpatialPicker.IsEnabled = true;
-            SpatialStatus.Text = $"Output: {state.EndpointName}";
+            SpatialStatus.Text = $"{SpatialSoundController.NameOf(state.ActiveSubtype)} · {state.EndpointName}";
+
+            // Dolby Atmos for Headphones only shows up once Dolby's paid Dolby Access app is installed.
+            var hasDolby = state.AvailableFormats.Any(f => f.Subtype == Windows.Media.Audio.SpatialAudioFormatSubtype.DolbyAtmosForHeadphones);
+            DolbyOffer.Visibility = hasDolby ? Visibility.Collapsed : Visibility.Visible;
         }
         catch (Exception ex)
         {
@@ -288,4 +312,8 @@ public sealed partial class StatusPage : Page
 
     private async void OnOpenSoundSettings(object sender, RoutedEventArgs e) =>
         await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:sound"));
+
+    // Store search rather than a hard-coded product ID, so the link keeps working if the listing changes.
+    private async void OnGetDolby(object sender, RoutedEventArgs e) =>
+        await Windows.System.Launcher.LaunchUriAsync(new Uri("ms-windows-store://search/?query=Dolby%20Access"));
 }
