@@ -64,11 +64,19 @@ internal static class Program
             orbit-cli connect|disconnect [--method hybrid|ks|service] [--watch <seconds>]
                 Switches the headphones to/from this PC (changes real state). Default method: hybrid.
 
-            orbit-cli diagnose | spatial
-                Read-only checks of the switching plumbing / Windows spatial sound.
+            orbit-cli diagnose
+                Read-only check of the switching plumbing.
 
             orbit-cli devices
                 Lists paired Bluetooth devices with their Device ID (vendor/product). Addresses are not printed.
+
+            orbit-cli rfcomm
+                Read-only list of the paired Apple devices' RFCOMM services.
+
+            orbit-cli spatial [--set sonic|dolby|off]
+                Shows (or sets) Windows spatial sound for the headphones' output.
+
+            Full guide: docs/cli.md
             """);
         return 2;
     }

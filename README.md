@@ -91,6 +91,7 @@ report, so it can be off by a few percent at most; an info icon says so.
 | `connect` / `disconnect [--method hybrid\|ks\|service] [--watch n]` | Switch the headphones to/from this PC (changes real state) |
 | `spatial` | Read-only Windows spatial sound state of the headphones' outputs |
 
+Full guide with every option, tag keys and the capture file format: [docs/cli.md](docs/cli.md).
 The app's **Debug** page does the same capture with buttons and, with a confirmed exact-battery key, also
 records the decrypted data.
 
