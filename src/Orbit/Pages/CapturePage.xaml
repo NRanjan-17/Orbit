@@ -14,7 +14,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Spacing="4">
-            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Debug: advertisement capture" />
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Debug" />
             <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                        Text="Logs every Apple (0x004C) BLE advertisement with timestamp, RSSI and raw hex to CSV. Press a tag button whenever you change the headphones' state; the tag applies to every frame until the next tag." />
         </StackPanel>
