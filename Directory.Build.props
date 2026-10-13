@@ -3,7 +3,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Company>Orbit</Company>
+    <Company>Nalinish Ranjan</Company>
+    <Authors>Nalinish Ranjan</Authors>
     <Product>Orbit</Product>
     <Copyright>Copyright (c) 2026 Nalinish Ranjan</Copyright>
     <Version>0.1.0</Version>
