@@ -65,7 +65,7 @@
                 </Grid.ColumnDefinitions>
                 <FontIcon Glyph="&#xE769;" FontSize="16" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Auto-pause" VerticalAlignment="Center" />
-                <ToggleSwitch x:Name="AutoPauseSwitch" Grid.Column="2" OnContent="" OffContent="" MinWidth="0" Toggled="OnAutoPauseToggled" />
+                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="AutoPauseSwitch" Grid.Column="2" OnContent="" OffContent="" Toggled="OnAutoPauseToggled" />
             </Grid>
             <Grid Padding="11,0" MinHeight="34" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
@@ -75,7 +75,7 @@
                 </Grid.ColumnDefinitions>
                 <FontIcon Glyph="&#xE7B5;" FontSize="16" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Start with Windows" VerticalAlignment="Center" />
-                <ToggleSwitch x:Name="StartupSwitch" Grid.Column="2" OnContent="" OffContent="" MinWidth="0" Toggled="OnStartupToggled" />
+                <ToggleSwitch Width="40" MinWidth="0" HorizontalAlignment="Right" x:Name="StartupSwitch" Grid.Column="2" OnContent="" OffContent="" Toggled="OnStartupToggled" />
             </Grid>
 
             <MenuFlyoutSeparator />

@@ -114,6 +114,18 @@ public class ExactBatteryTests
         Assert.True(resolver.UsedReversedKey);
     }
 
+    [Theory]
+    // Real decrypted blocks from the owner's AirPods Max (USB-C), 2026-10-14 (protocol-findings F7). Plaintext
+    // only: it carries the battery and a counter, not the key. Bytes 0-10 constant, byte 11 counts, 12-15 vary.
+    [InlineData("04410000AAAAAA00000000013AE4C939")]
+    [InlineData("04410000AAAAAA0000000002EDCF7E3F")]
+    public void RealMaxPlaintextDecodesTo65Percent(string plainHex)
+    {
+        var coarse = new Reading<int>(60, Confidence.VerifiedOnDevice, "t"); // advertised nibble 6
+        var exact = ExactBatteryResolver.Decode(Convert.FromHexString(plainHex), coarse);
+        Assert.Equal(new ExactBattery(65, false), exact); // byte 1 = 0x41 = 65 %
+    }
+
     [Fact]
     public void DecryptedValueMustAgreeWithVerifiedCoarseReading()
     {

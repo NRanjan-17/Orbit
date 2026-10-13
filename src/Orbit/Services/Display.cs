@@ -12,7 +12,15 @@ public static class Display
     public static bool IsShown<T>(Reading<T> r, bool showUnverified) =>
         r.HasValue && (r.Confidence >= Confidence.Corroborated || showUnverified);
 
-    private static string Badge(Confidence c) => c == Confidence.VerifiedOnDevice ? "" : " (unverified)";
+    // Values are shown without inline "(unverified)" text (owner's request, 2026-10-14). Unverified values are
+    // instead flagged by an info icon + tooltip next to the battery (see IsBatteryUnverified) and in the README.
+    private static string Badge(Confidence c) => "";
+
+    /// <summary>True when the battery value being displayed is not yet verified on the owner's device.</summary>
+    public static bool IsBatteryUnverified(DeviceStatus s) =>
+        s.ExactBattery.HasValue
+            ? s.ExactBattery.Confidence < Confidence.VerifiedOnDevice
+            : s.LowestBattery.HasValue && s.LowestBattery.Confidence < Confidence.VerifiedOnDevice;
 
     public static string Battery(Reading<int> r, bool showUnverified) =>
         IsShown(r, showUnverified) ? ProximityPairingParser.FormatBattery(r.Value) + Badge(r.Confidence) : "Unknown";

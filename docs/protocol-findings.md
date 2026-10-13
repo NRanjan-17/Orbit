@@ -56,6 +56,19 @@ Consequences in Orbit:
   with their time, instead of stale values presented as current. Auto-pause forgets any held pause.
 - Answered by F6: picking the Max up while it stays plugged in restarts advertising.
 
+## F7. Encrypted tail decrypts with the Mac's MagicAccEncKey (2026-10-14)
+- Key copied from the Mac keychain item `MobileBluetooth` (`MagicAccEncKey`), used **as entered** (not reversed),
+  AES-128 one block over `d[11..26]`. Two earlier pasted values (other fields) decrypted to random bytes and were
+  rejected by the consistency check.
+- Plaintext from two consecutive broadcasts:
+  `04 41 00 00 xx xx xx 00 00 00 00 01 3A E4 C9 39` and `04 41 00 00 xx xx xx 00 00 00 00 02 ED CF 7E 3F`.
+  Bytes 0-10 constant, byte 11 a counter, bytes 12-15 varying — impossible with a wrong key.
+- **Byte 1 = `0x41` = 65 %, charging bit clear**, inside the coarse band (nibble 6 → 60-69 %); the Mac had shown
+  65 % in the F6 session. Bytes 2 and 3 are `00` (LibrePods expects `7F` for absent components; the decoder takes
+  byte 1, as CAPod does). Meaning of bytes 0, 4-6 unknown.
+- Status: decoding works on the Max (USB-C); the exact value is **pending one side-by-side check with the Mac**
+  before it is marked VerifiedOnDevice.
+
 ## F6. Charging session (2026-10-13 23:43, 60 s, Max plugged in by USB-C and awake) — fixture `charging-session-max-usbc.csv`
 - **Battery — VERIFIED (2nd reading):** `d[6] = 06` all session; the Mac showed **65 %** → "60–69%". With F4
   (37 % ↔ `03`) the low-nibble rule holds at two different levels.

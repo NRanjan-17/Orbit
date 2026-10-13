@@ -51,7 +51,12 @@
 
                         <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                             <TextBlock x:Name="DeviceName" Style="{StaticResource SubtitleTextBlockStyle}" TextTrimming="CharacterEllipsis" Text="No device" />
-                            <TextBlock x:Name="BatteryText" Style="{StaticResource TitleLargeTextBlockStyle}" Text="-" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock x:Name="BatteryText" Style="{StaticResource TitleLargeTextBlockStyle}" Text="-" />
+                                <FontIcon x:Name="UnverifiedHint" Glyph="&#xE946;" FontSize="16" VerticalAlignment="Center"
+                                          Foreground="{ThemeResource TextFillColorTertiaryBrush}" Visibility="Collapsed"
+                                          ToolTipService.ToolTip="This value is decoded the way open-source projects describe, but it hasn't been confirmed against your Mac yet." />
+                            </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="WornText" Text="Unknown" /></Border>
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="ChargingText" Text="Unknown" /></Border>

@@ -166,6 +166,7 @@ public sealed partial class StatusPage : Page
             BatteryText.Text = st.Form == Core.Parsing.DeviceForm.Earbuds
                 ? $"L {Display.Battery(st.LeftBattery, show)} · R {Display.Battery(st.RightBattery, show)} · Case {Display.Battery(st.CaseBattery, show)}"
                 : Display.BatteryOf(st, show);
+            UnverifiedHint.Visibility = Display.IsBatteryUnverified(st) ? Visibility.Visible : Visibility.Collapsed;
 
             var charging = Display.Flag(st.Form == Core.Parsing.DeviceForm.Earbuds ? st.CaseCharging : st.Charging, show, "Charging", "Not charging");
             ChargingText.Text = charging == "Unknown" ? "Charging: unknown" : charging;
