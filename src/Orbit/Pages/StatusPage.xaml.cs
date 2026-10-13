@@ -154,6 +154,7 @@ public sealed partial class StatusPage : Page
         {
             BatteryText.Text = "-";
             BatteryRing.Value = 0;
+            Wear.IsWorn = null;
             WornText.Text = "Worn: unknown";
             ChargingText.Text = "Charging: unknown";
             SignalText.Text = "No signal";
@@ -174,6 +175,9 @@ public sealed partial class StatusPage : Page
             ChargingText.Text = charging == "Unknown" ? "Charging: unknown" : charging;
             var worn = Display.Flag(st.AnyWorn, show, "On head", "Off head");
             WornText.Text = worn == "Unknown" ? "Worn: unknown" : worn;
+
+            // Animate only on fresh, displayable readings; asleep or unknown -> dimmed, lifted headphones.
+            Wear.IsWorn = s.Current is not null && Display.IsShown(st.AnyWorn, show) ? st.AnyWorn.Value : null;
             SignalText.Text = s.Current is null ? "Asleep" : $"Signal {Display.Signal(shown)}";
         }
 
