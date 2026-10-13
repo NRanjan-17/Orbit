@@ -23,6 +23,9 @@ public sealed record DeviceStatus
     /// </summary>
     public Reading<int> ExactBattery { get; init; } = Reading<int>.Unknown();
 
+    /// <summary>Estimate within the advertised 10 % step (no key needed); see Tracking.BatteryEstimator.</summary>
+    public Tracking.BatteryEstimate? Estimate { get; init; }
+
     /// <summary>
     /// Lower three bytes of the address of the device the headphones are connected to, from the decrypted tail
     /// (needs the exact-battery key). Compare with this PC's adapter to tell "this PC" from "another device".

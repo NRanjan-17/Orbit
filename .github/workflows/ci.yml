@@ -1,0 +1,21 @@
+# Builds and tests every push and pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x # latest .NET 10 SDK (global.json allows roll-forward; verified locally on 10.0.401)
+      - run: dotnet build Orbit.slnx -c Release
+      - run: dotnet test --solution Orbit.slnx -c Release

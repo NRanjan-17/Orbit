@@ -1,0 +1,85 @@
+# Builds Orbit, runs the tests, and publishes a GitHub Release with ready-to-run zips.
+#
+# Trigger: push a version tag, e.g.
+#   git tag v0.2.0
+#   git push origin v0.2.0
+# or run it manually from the Actions tab (workflow_dispatch) with a version.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.2.0, without the v)"
+        required: true
+
+permissions:
+  contents: write # create the release and upload assets
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x # latest .NET 10 SDK (global.json allows roll-forward; verified locally on 10.0.401)
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $v = if ("${{ github.event_name }}" -eq "workflow_dispatch") { "${{ inputs.version }}" } else { "${{ github.ref_name }}".TrimStart("v") }
+          if ($v -notmatch '^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$') { throw "Not a version: $v" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          "tag=v$v" >> $env:GITHUB_OUTPUT
+
+      - name: Test
+        run: dotnet test --solution Orbit.slnx -c Release
+
+      - name: Publish app (x64, ARM64)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.version.outputs.version }}"
+          New-Item -ItemType Directory -Force dist | Out-Null
+          foreach ($arch in "x64", "arm64") {
+            $out = "publish/Orbit-win-$arch"
+            dotnet publish src/Orbit/Orbit.csproj -c Release -r "win-$arch" --self-contained true -p:Version=$v -o $out
+            if ($LASTEXITCODE -ne 0) { throw "publish failed for $arch" }
+            if (-not (Test-Path "$out/Orbit.exe")) { throw "Orbit.exe missing for $arch" }
+            Compress-Archive -Path "$out/*" -DestinationPath "dist/Orbit-$v-win-$arch.zip"
+          }
+
+      - name: Publish orbit-cli (x64, single file)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.version.outputs.version }}"
+          dotnet publish tools/Orbit.Cli/Orbit.Cli.csproj -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -p:Version=$v -o publish/cli
+          if ($LASTEXITCODE -ne 0) { throw "cli publish failed" }
+          Compress-Archive -Path publish/cli/orbit-cli.exe -DestinationPath "dist/orbit-cli-$v-win-x64.zip"
+
+      - name: Checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist/*.zip | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          } | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          Get-Content dist/SHA256SUMS.txt
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Orbit ${{ steps.version.outputs.version }}
+          body_path: .github/release-notes.md
+          generate_release_notes: true # appends the list of changes since the previous release
+          files: |
+            dist/*.zip
+            dist/SHA256SUMS.txt

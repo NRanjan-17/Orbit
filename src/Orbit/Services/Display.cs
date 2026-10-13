@@ -22,21 +22,22 @@ public static class Display
             ? s.ExactBattery.Confidence < Confidence.VerifiedOnDevice
             : s.LowestBattery.HasValue && s.LowestBattery.Confidence < Confidence.VerifiedOnDevice;
 
-    /// <summary>Settings → "Battery as a single number": show the middle of a 10 % step instead of a range.</summary>
-    public static bool BatteryAsSingleNumber { get; set; }
-
-    /// <summary>
-    /// The number to show for a 10 %-step reading in single-number mode: the middle of the step (60 → 65),
-    /// as OpenPods does; 100 stays 100. Approximate by nature: the broadcast only carries the step.
-    /// </summary>
-    public static int Approximate(int stepLowerBound) => stepLowerBound >= 100 ? 100 : stepLowerBound + 5;
+    /// <summary>Settings → "Estimate battery between 10% steps" (no key needed).</summary>
+    public static bool EstimateBattery { get; set; }
 
     public static string Battery(Reading<int> r, bool showUnverified) =>
-        !IsShown(r, showUnverified) ? "Unknown"
-        : BatteryAsSingleNumber ? $"{Approximate(r.Value)}%"
-        : ProximityPairingParser.FormatBattery(r.Value) + Badge(r.Confidence);
+        IsShown(r, showUnverified) ? ProximityPairingParser.FormatBattery(r.Value) + Badge(r.Confidence) : "Unknown";
 
-    /// <summary>Exact percent when decrypted with the user's key, otherwise the advertised 10 % range.</summary>
+    /// <summary>The battery number to show, or null for a range: exact (key) first, then the estimate if enabled.</summary>
+    public static int? BatteryNumber(DeviceStatus s) =>
+        s.ExactBattery.HasValue ? s.ExactBattery.Value
+        : EstimateBattery && s.Estimate is { } e ? e.Percent
+        : null;
+
+    /// <summary>True when the shown battery is the estimate (so the UI can say it may be a few % off).</summary>
+    public static bool IsEstimated(DeviceStatus s) => !s.ExactBattery.HasValue && EstimateBattery && s.Estimate is not null;
+
+    /// <summary>Exact percent with a key; "≈66%" when estimating; otherwise the advertised 10 % range.</summary>
     public static string BatteryOf(DeviceStatus s, bool showUnverified)
     {
         if (s.ExactBattery.HasValue)
@@ -44,8 +45,23 @@ public static class Display
             return $"{s.ExactBattery.Value}%" + Badge(s.ExactBattery.Confidence);
         }
 
+        if (IsEstimated(s))
+        {
+            return $"≈{s.Estimate!.Percent}%";
+        }
+
         return Battery(s.LowestBattery, showUnverified);
     }
+
+    /// <summary>Tooltip for the battery info icon, or null when the value needs no explanation.</summary>
+    public static string? BatteryHint(DeviceStatus s) =>
+        IsEstimated(s)
+            ? s.Estimate!.Anchored
+                ? "Estimated: the headphones report battery in 10% steps. Orbit counts within the step from when it last changed and how fast it changes, so it may be a few percent off."
+                : "Estimated: the middle of the 10% step the headphones report. It gets more accurate after the next step change."
+            : IsBatteryUnverified(s)
+                ? "This value is decoded the way open-source projects describe, but it hasn't been confirmed against your Mac yet."
+                : null;
 
     public static string Flag(Reading<bool> r, bool showUnverified, string yes, string no) =>
         IsShown(r, showUnverified) ? (r.Value ? yes : no) + Badge(r.Confidence) : "Unknown";

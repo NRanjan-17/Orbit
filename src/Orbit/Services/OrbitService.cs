@@ -26,7 +26,7 @@ public sealed class OrbitService : IDisposable
         _ui = ui;
         Store = store;
         Settings = store.Load();
-        Display.BatteryAsSingleNumber = Settings.BatteryAsSingleNumber;
+        Display.EstimateBattery = Settings.EstimateBattery;
         _tracker = new DeviceTracker(null, Settings.RssiThreshold);
         _autoPause = CreateAutoPause();
         _lowBattery = new LowBatteryMonitor(Settings.LowBatteryPercent);
@@ -162,7 +162,7 @@ public sealed class OrbitService : IDisposable
     /// <summary>Re-applies settings that affect tracking/auto-pause and saves them.</summary>
     public void SaveSettings()
     {
-        Display.BatteryAsSingleNumber = Settings.BatteryAsSingleNumber;
+        Display.EstimateBattery = Settings.EstimateBattery;
         Store.Save(Settings);
         _tracker.RssiThreshold = Settings.RssiThreshold;
         if (Settings.AutoPauseResponse != _autoPauseResponse)

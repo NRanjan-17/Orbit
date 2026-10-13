@@ -16,6 +16,8 @@
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <EnableMsixTooling>true</EnableMsixTooling>
+    <!-- The UI is English-only: don't ship localized framework/SDK resource folders (smaller release). -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <!-- `dotnet build` of the solution passes no platform; default to the machine's architecture. -->

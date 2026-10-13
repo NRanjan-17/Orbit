@@ -63,10 +63,10 @@
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE8EF;" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Style="{StaticResource RowTitle}" Text="Battery as a single number" />
-                    <TextBlock Style="{StaticResource RowDescription}" Text="Without an exact-battery key the headphones only report 10% steps. Show the middle of the step (e.g. 65%) instead of a range (60–69%). Approximate; an exact-battery key always wins." />
+                    <TextBlock Style="{StaticResource RowTitle}" Text="Estimate battery between 10% steps" />
+                    <TextBlock Style="{StaticResource RowDescription}" Text="No Mac or iPhone for an exact-battery key? Orbit estimates the level within each 10% step from when the step last changed and how fast it changes. Shown as ≈66%; may be a few percent off. An exact-battery key always wins." />
                 </StackPanel>
-                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="SingleNumberToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="EstimateToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -138,7 +138,7 @@
                 <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE765;" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Switch-to-this-PC hotkey" />
-                    <TextBlock x:Name="HotkeyError" Style="{StaticResource RowDescription}" Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                    <TextBlock x:Name="HotkeyError" Style="{StaticResource RowDescription}" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Visibility="Collapsed" />
                 </StackPanel>
                 <TextBox x:Name="HotkeyBox" Grid.Column="2" Width="200" VerticalAlignment="Center" PlaceholderText="e.g. Ctrl+Alt+O" LostFocus="OnChanged" />
             </Grid>
@@ -189,7 +189,7 @@
                 <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE768;" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Test chime" />
-                    <TextBlock x:Name="ChimeStatus" Style="{StaticResource RowDescription}" />
+                    <TextBlock x:Name="ChimeStatus" Style="{StaticResource RowDescription}" Visibility="Collapsed" />
                 </StackPanel>
                 <Button Grid.Column="2" Content="Play" Width="100" VerticalAlignment="Center" Click="OnTestChime" />
             </Grid>

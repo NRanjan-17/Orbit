@@ -28,7 +28,7 @@ public sealed partial class SettingsPage : Page
         StartupToggle.IsOn = StartupRegistration.IsEnabled();
         UnverifiedToggle.IsOn = s.ShowUnverified;
         TrayBatteryToggle.IsOn = s.TrayShowsBattery;
-        SingleNumberToggle.IsOn = s.BatteryAsSingleNumber;
+        EstimateToggle.IsOn = s.EstimateBattery;
         ConnectToastToggle.IsOn = s.ConnectToast;
         ResponseBox.SelectedItem = ResponseBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == s.AutoPauseResponse) ?? ResponseBox.Items[0];
         ChimeConnectToggle.IsOn = s.ChimeOnConnect;
@@ -36,7 +36,7 @@ public sealed partial class SettingsPage : Page
         HotkeyBox.Text = s.Hotkey;
         AutoConnectToggle.IsOn = s.AutoConnect;
         MethodBox.SelectedItem = MethodBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == s.SwitchMethod) ?? MethodBox.Items[0];
-        HotkeyError.Text = App.Switch?.HotkeyError ?? "";
+        SetNote(HotkeyError, App.Switch?.HotkeyError ?? "");
         _loading = false;
     }
 
@@ -63,7 +63,7 @@ public sealed partial class SettingsPage : Page
 
         s.ShowUnverified = UnverifiedToggle.IsOn;
         s.TrayShowsBattery = TrayBatteryToggle.IsOn;
-        s.BatteryAsSingleNumber = SingleNumberToggle.IsOn;
+        s.EstimateBattery = EstimateToggle.IsOn;
         s.ConnectToast = ConnectToastToggle.IsOn;
         RssiValue.Text = $"{s.RssiThreshold} dBm";
 
@@ -89,20 +89,27 @@ public sealed partial class SettingsPage : Page
     {
         if (App.Service?.BoundDevice?.ContainerId is not { } container)
         {
-            ChimeStatus.Text = "Choose your device on the Status page first.";
+            SetNote(ChimeStatus, "Choose your device on the Status page first.");
             return;
         }
 
         try
         {
-            ChimeStatus.Text = await Platform.Audio.ChimePlayer.PlayAsync(container)
+            SetNote(ChimeStatus, await Platform.Audio.ChimePlayer.PlayAsync(container)
                 ? "Played on the headphones."
-                : "The headphones have no audio output on this PC. Connect them first.";
+                : "The headphones have no audio output on this PC. Connect them first.");
         }
         catch (Exception ex)
         {
-            ChimeStatus.Text = $"Could not play: {ex.Message}";
+            SetNote(ChimeStatus, $"Could not play: {ex.Message}");
         }
+    }
+
+    /// <summary>Shows a row's note line only when it has text, so empty notes don't push the title off-centre.</summary>
+    private static void SetNote(TextBlock note, string? text)
+    {
+        note.Text = text ?? "";
+        note.Visibility = string.IsNullOrEmpty(text) ? Microsoft.UI.Xaml.Visibility.Collapsed : Microsoft.UI.Xaml.Visibility.Visible;
     }
 
     private async Task SyncSwitchAsync()
@@ -110,7 +117,7 @@ public sealed partial class SettingsPage : Page
         if (App.Switch is { } sw)
         {
             await sw.SyncAsync();
-            HotkeyError.Text = sw.HotkeyError ?? "";
+            SetNote(HotkeyError, sw.HotkeyError ?? "");
         }
     }
 }

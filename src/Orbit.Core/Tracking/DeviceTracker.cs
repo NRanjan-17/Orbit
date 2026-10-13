@@ -15,6 +15,7 @@ public sealed class DeviceTracker
 {
     private readonly Dictionary<string, TrackedDevice> _candidates = [];
     private readonly Dictionary<string, ChargingLatch> _latches = [];
+    private readonly Dictionary<string, BatteryEstimator> _estimators = [];
     private readonly Func<ushort, ModelProfile?> _lookup;
     private readonly ushort? _boundModelId;
 
@@ -65,6 +66,19 @@ public sealed class DeviceTracker
         }
 
         status = status with { Charging = latch.Update(status.Charging, at) };
+
+        if (status.Form == DeviceForm.Headphones && status.Battery.IsUsable(Confidence.VerifiedOnDevice))
+        {
+            if (!_estimators.TryGetValue(key, out var estimator))
+            {
+                _estimators[key] = estimator = new BatteryEstimator();
+            }
+
+            status = status with
+            {
+                Estimate = estimator.Update(status.Battery.Value, status.Charging.HasValue ? status.Charging.Value : null, at),
+            };
+        }
 
         if (Exact is { } resolver && status.Form == DeviceForm.Headphones && resolver.Resolve(status.Frame, status.Battery) is { } exact)
         {

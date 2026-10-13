@@ -261,9 +261,8 @@ public partial class App : Application
     {
         var s = (_service!.Current ?? _service.LastKnown)?.Status;
         int? percent = s is null ? null
-            : s.ExactBattery.HasValue ? s.ExactBattery.Value
-            : Display.IsShown(s.LowestBattery, _service.Settings.ShowUnverified)
-                ? (Display.BatteryAsSingleNumber ? Display.Approximate(s.LowestBattery.Value) : s.LowestBattery.Value)
+            : Display.BatteryNumber(s) is { } n ? n
+            : Display.IsShown(s.LowestBattery, _service.Settings.ShowUnverified) ? s.LowestBattery.Value
             : null;
 
         var light = TaskbarUsesLightTheme();

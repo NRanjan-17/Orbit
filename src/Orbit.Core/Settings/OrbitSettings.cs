@@ -28,10 +28,11 @@ public sealed class OrbitSettings
     public bool StartWithWindows { get; set; }
 
     /// <summary>
-    /// Without an exact-battery key the headphones report 10 % steps; show the middle of the step as one number
-    /// (e.g. 65 %) instead of a range (60-69 %). For users without a Mac/iPhone to copy a key from.
+    /// Without an exact-battery key the headphones report 10 % steps; estimate the level within the step from
+    /// when the step last changed and how fast steps change (BatteryEstimator). Shown as "≈66%".
+    /// For users without a Mac/iPhone to copy a key from.
     /// </summary>
-    public bool BatteryAsSingleNumber { get; set; }
+    public bool EstimateBattery { get; set; }
 
     /// <summary>Draw the battery percentage as the tray icon instead of the Orbit logo.</summary>
     public bool TrayShowsBattery { get; set; }
