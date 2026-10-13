@@ -47,12 +47,15 @@ public class ProximityPairingParserTests
     {
         var status = ProximityPairingParser.Parse(Hex.Parse("0719011F200103800012C400000000000000000000000000000000"), Lookup)!;
 
-        // OpenPods-only rules -> SingleSource. The UI must not present these as fact.
-        Assert.Equal(Confidence.SingleSource, status.Battery.Confidence);
+        // Battery: confirmed against the Mac (37% <-> nibble 3). Charging: still OpenPods-only.
+        Assert.Equal(30, status.Battery.Value);
+        Assert.Equal(Confidence.VerifiedOnDevice, status.Battery.Confidence);
+        Assert.Equal("30–39%", ProximityPairingParser.FormatBattery(status.Battery.Value));
         Assert.Equal(Confidence.SingleSource, status.Charging.Confidence);
 
-        // No source documents an on-head bit for Max.
-        Assert.False(status.Worn.HasValue);
+        // On-head is capture-verified for the bound headphones (protocol-findings F4): d[5]=01 -> off head.
+        Assert.False(status.Worn.Value);
+        Assert.Equal(Confidence.VerifiedOnDevice, status.Worn.Confidence);
 
         // Bytes outside every community table stay unknown rather than being guessed.
         Assert.False(status.Color.HasValue);           // 0x12

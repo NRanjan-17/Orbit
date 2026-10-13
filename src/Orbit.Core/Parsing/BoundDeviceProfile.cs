@@ -45,6 +45,6 @@ public static class BoundDeviceProfile
             form,
             Confidence.VerifiedOnDevice,
             "Device ID product ID of the paired device (runtime)",
-            form == DeviceForm.Headphones ? known?.Headphone ?? HeadphoneLayouts.Community : null);
+            form == DeviceForm.Headphones ? HeadphoneLayouts.Captured : null);
     }
 }

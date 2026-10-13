@@ -22,15 +22,32 @@ Status legend: **VERIFIED** (confirmed by tagged capture or by Windows on the re
 - Observed head (Max on desk, connected to the PC, not charging; battery not recorded):
   `07 19 01 1F 20 | 01 | 03 | 80 | 00 | 12 | C4/C0`
 
-## F3. Fields — PENDING tagged capture session
-| Field | Community claim | Probe observation | Status |
+## F3. Untagged session (2026-10-13 22:59, 279 frames)
+Tags did not register. `d[5]` went `01 → 2B → 01`; `d[8]` cycled `02, 83..87, 80, 81, 01, 82, 02` in the
+first minute (unknown cause). Used only as a lead for F4.
+
+## F4. Tagged session (2026-10-13 23:04, 3.5 min, 23 markers) — fixture `tests/Orbit.Tests/Fixtures/tagged-session-max-usbc.csv`
+Tag windows were short (5–15 s). The Max reports changes ~2–4 s *before* the tag click.
+
+| Field | Community claim | What the capture shows | Status |
 |---|---|---|---|
-| Battery | low nibble `d[6]` (OpenPods only) | `d[6]=0x03` | PENDING — compare with Mac-reported % |
-| Charging | `d[7] & 0x10` (OpenPods only) | `d[7]=0x80` (bit 0x80 not in any table) | PENDING |
-| On-head | none documented | `d[5]=0x01` | PENDING |
-| Colour | table `00..0C` | `d[9]=0x12` (not in any table) | OBSERVED |
-| `d[10]` | LibrePods: connection state (`04` Idle, `00` Disconnected) | `C4`, once `C0` | OBSERVED |
-| Connected elsewhere | none documented | – | PENDING |
+| On-head | none documented | `d[5]` = `2B` on head, `01` off head; all 3 tagged transitions match (lead 2–4 s) | **VERIFIED** (exact values only) |
+| In Smart Case | – | `d[5]` = `3F` while in case + charging; `0x3F` ⊇ bits of `0x2B`, so bit masks are unsafe | OBSERVED → treated as unknown |
+| Noise mode | – | ANC / Transparency / Off tags: `d[0..9]` unchanged | **VERIFIED: not in unencrypted bytes** |
+| Battery | low nibble `d[6]` (OpenPods only) | `d[6]` constant `03` all session; Mac reported **37 %** | **VERIFIED** (one reading; 10 % steps, shown as "30–39%") |
+| Charging | `d[7] & 0x10` (OpenPods only) | `80 → 90` 1 s before the first `charging` tag, back to `80` after 7 s; not set on the second (in-case) charge | OBSERVED, inconsistent → unverified |
+| `d[8]` | lid counter / closed bit (earbuds) | `02` normally; `03`, `84`, `04` around the Smart Case | OBSERVED |
+| `d[10]` | LibrePods: connection state | `C0`/`C4`/`C8`, not aligned with Mac/PC/disconnected tags | OBSERVED, not usable |
+| Connected elsewhere | none documented | no byte tracks Mac vs PC vs disconnected | **NOT AVAILABLE** in unencrypted bytes |
+| Colour `d[9]` | table `00..0C` | constant `12` (not in any table) | OBSERVED |
+
+Consequences in Orbit:
+- On-head (bound headphones): `ByteValueRule(d[5], true: 2B, false: 01)`, VerifiedOnDevice. Any other value → unknown.
+  Auto-pause may act on it.
+- Noise mode cannot be read from BLE; multi-device switching cannot rely on a "connected elsewhere" bit.
+- Battery (bound headphones): low nibble of `d[6]`, VerifiedOnDevice, displayed as a 10 % range.
+  A second reading at a different level would strengthen this (README test checklist).
+- Charging stays unverified (shown only with "Show unverified readings").
 
 Until a field is VERIFIED, Orbit shows it as "unknown" (or with an "unverified" badge when the user
 turns on *Show unverified readings*), and never acts on it automatically (e.g. auto-pause stays off).

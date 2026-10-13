@@ -58,6 +58,12 @@ public static class ProximityPairingParser
     /// 0xB-0xE: sources disagree (LibrePods Android clamps to 100, AirPodsDesktop/OpenPods reject) → unknown.</summary>
     internal static int? NibbleToPercent(int nibble) => nibble is >= 0 and <= 10 ? nibble * 10 : null;
 
+    /// <summary>
+    /// The advertisement only carries 10 % steps (Mac 37 % was advertised as 3), so show the range the
+    /// value stands for instead of a false-precision number: 30 → "30–39%", 100 → "100%".
+    /// </summary>
+    public static string FormatBattery(int percent) => percent >= 100 ? "100%" : $"{percent}–{percent + 9}%";
+
     private static DeviceStatus DecodeHeadphones(DeviceStatus status, ReadOnlySpan<byte> payload, HeadphoneLayout? layout)
     {
         if (layout is null)
@@ -74,9 +80,21 @@ public static class ProximityPairingParser
         return status with
         {
             Battery = battery,
-            Charging = layout.Charging is { } cr ? new Reading<bool>(cr.Read(payload), cr.Confidence, cr.Source) : Reading<bool>.Unknown("no charging rule"),
-            Worn = layout.Worn is { } wr ? new Reading<bool>(wr.Read(payload), wr.Confidence, wr.Source) : Reading<bool>.Unknown("no on-head rule"),
+            Charging = ReadBool(layout.Charging, payload, "charging"),
+            Worn = ReadBool(layout.Worn, payload, "on-head"),
         };
+    }
+
+    private static Reading<bool> ReadBool(IBoolRule? rule, ReadOnlySpan<byte> payload, string what)
+    {
+        if (rule is null)
+        {
+            return Reading<bool>.Unknown($"no {what} rule");
+        }
+
+        return rule.Read(payload) is { } v
+            ? new Reading<bool>(v, rule.Confidence, rule.Source)
+            : Reading<bool>.Unknown($"{what}: byte value not seen in captures");
     }
 
     private static DeviceStatus DecodeEarbuds(DeviceStatus status, ProximityPairingFrame f)
