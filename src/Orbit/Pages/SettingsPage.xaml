@@ -33,6 +33,18 @@
             </StackPanel>
 
             <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Switching between devices" />
+                <TextBox x:Name="HotkeyBox" Header="Hotkey for &quot;Switch to this PC&quot; (empty = none)" PlaceholderText="Ctrl+Alt+O"
+                         Width="260" HorizontalAlignment="Left" LostFocus="OnChanged" />
+                <TextBlock x:Name="HotkeyError" Foreground="{ThemeResource SystemFillColorCriticalBrush}" TextWrapping="Wrap" />
+                <ToggleSwitch x:Name="AutoConnectToggle" Header="Connect automatically when Windows starts playing and the headphones are nearby" Toggled="OnChanged" />
+                <ComboBox x:Name="MethodBox" Header="Connection method" Width="420" SelectionChanged="OnChanged">
+                    <ComboBoxItem Tag="ks" Content="Audio driver reconnect (recommended)" />
+                    <ComboBoxItem Tag="service" Content="Toggle Bluetooth services (fallback, slower)" />
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel Spacing="4">
                 <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="General" />
                 <ToggleSwitch x:Name="StartupToggle" Header="Start with Windows (in the tray)" Toggled="OnChanged" />
                 <ToggleSwitch x:Name="UnverifiedToggle" Header="Show unverified readings (single-source community data)" Toggled="OnChanged" />

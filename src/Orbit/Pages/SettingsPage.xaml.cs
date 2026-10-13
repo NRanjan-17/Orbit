@@ -25,6 +25,10 @@ public sealed partial class SettingsPage : Page
         LowBatteryBox.Value = s.LowBatteryPercent;
         StartupToggle.IsOn = StartupRegistration.IsEnabled();
         UnverifiedToggle.IsOn = s.ShowUnverified;
+        HotkeyBox.Text = s.Hotkey;
+        AutoConnectToggle.IsOn = s.AutoConnect;
+        MethodBox.SelectedItem = MethodBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == s.SwitchMethod) ?? MethodBox.Items[0];
+        HotkeyError.Text = App.Switch?.HotkeyError ?? "";
         _loading = false;
     }
 
@@ -58,7 +62,21 @@ public sealed partial class SettingsPage : Page
             StartupRegistration.Set(s.StartWithWindows, Environment.ProcessPath!);
         }
 
+        s.Hotkey = HotkeyBox.Text.Trim();
+        s.AutoConnect = AutoConnectToggle.IsOn;
+        s.SwitchMethod = (MethodBox.SelectedItem as ComboBoxItem)?.Tag as string ?? Core.Settings.SwitchMethods.Ks;
+
         service.SaveSettings();
+        _ = SyncSwitchAsync();
         SavedText.Text = "Saved.";
+    }
+
+    private async Task SyncSwitchAsync()
+    {
+        if (App.Switch is { } sw)
+        {
+            await sw.SyncAsync();
+            HotkeyError.Text = sw.HotkeyError ?? "";
+        }
     }
 }

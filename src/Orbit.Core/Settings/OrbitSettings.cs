@@ -29,8 +29,17 @@ public sealed class OrbitSettings
     // Phase 4 (multi-device)
     public bool AutoConnect { get; set; }
 
-    /// <summary>Global hotkey for "switch to this PC", e.g. "Ctrl+Alt+O".</summary>
+    /// <summary>Global hotkey for "switch to this PC", e.g. "Ctrl+Alt+O". Empty = no hotkey.</summary>
     public string Hotkey { get; set; } = "Ctrl+Alt+O";
+
+    /// <summary>"ks" = audio-driver one-shot reconnect (default), "service" = BluetoothSetServiceState fallback.</summary>
+    public string SwitchMethod { get; set; } = SwitchMethods.Ks;
+}
+
+public static class SwitchMethods
+{
+    public const string Ks = "ks";
+    public const string Service = "service";
 }
 
 /// <summary>Loads and saves <see cref="OrbitSettings"/>. Corrupt files fall back to defaults.</summary>

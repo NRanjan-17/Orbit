@@ -35,6 +35,9 @@ internal static class Program
                 "analyze" or "analyse" => Analyze(args.Skip(1).ToArray()),
                 "devices" => Devices(),
                 "spatial" => Spatial(),
+                "diagnose" => Diagnose(),
+                "connect" => Switch(args.Skip(1).ToArray(), connect: true),
+                "disconnect" => Switch(args.Skip(1).ToArray(), connect: false),
                 _ => Usage(),
             };
         }
@@ -139,6 +142,53 @@ internal static class Program
         return 0;
 
         static string Fmt(ushort? v) => v is { } x ? $"0x{x:X4}" : "-";
+    }
+
+    /// <summary>Read-only: checks the connect/disconnect plumbing for each paired Apple device without sending anything.</summary>
+    private static int Diagnose()
+    {
+        var size = ServiceStateConnector.DeviceInfoSize;
+        Console.WriteLine($"BLUETOOTH_DEVICE_INFO size: {size} (expected 560 on 64-bit)");
+        foreach (var d in PairedDeviceCatalog.GetPairedAsync().GetAwaiter().GetResult().Where(d => d.IsApple))
+        {
+            var filters = d.ContainerId is { } c ? new KsAudioConnector(c).CountFilters() : 0;
+            Console.WriteLine($"{d.Name}: connected={d.Connected} bluetoothAudioKsFilters={filters}");
+        }
+
+        return 0;
+    }
+
+    /// <summary>
+    /// Connects/disconnects the first paired Apple device via SwitchCoordinator, printing each step.
+    /// Usage: orbit-cli connect|disconnect [--method ks|service]. Changes real state: run only when asked to.
+    /// </summary>
+    private static int Switch(string[] args, bool connect)
+    {
+        var device = PairedDeviceCatalog.GetPairedAsync().GetAwaiter().GetResult().FirstOrDefault(d => d.IsApple && d.ContainerId is not null);
+        if (device is null)
+        {
+            Console.Error.WriteLine("No paired Apple audio device found.");
+            return 1;
+        }
+
+        using var monitor = ConnectionMonitor.CreateAsync(device.DeviceId).GetAwaiter().GetResult()!;
+        Orbit.Core.Switching.IAudioConnector connector = Option(args, "--method") == "service"
+            ? new ServiceStateConnector(device.Address, device.Name)
+            : new KsAudioConnector(device.ContainerId!.Value);
+        var coordinator = new Orbit.Core.Switching.SwitchCoordinator(connector, monitor);
+
+        Console.WriteLine($"{(connect ? "Connecting" : "Releasing")} {device.Name} using {connector.Name}; connected now={monitor.IsConnected}");
+        var started = DateTime.UtcNow;
+        var result = (connect ? coordinator.ConnectAsync() : coordinator.ReleaseAsync()).GetAwaiter().GetResult();
+        Console.WriteLine($"Result: {result.Outcome} after {result.Attempts} attempt(s), {(DateTime.UtcNow - started).TotalSeconds:0.0} s: {result.Message}");
+        Console.WriteLine(connector switch
+        {
+            KsAudioConnector k => k.LastDiagnostics,
+            ServiceStateConnector s => s.LastDiagnostics,
+            _ => "",
+        });
+        return result.Outcome is Orbit.Core.Switching.SwitchOutcome.Connected or Orbit.Core.Switching.SwitchOutcome.Released
+            or Orbit.Core.Switching.SwitchOutcome.AlreadyConnected or Orbit.Core.Switching.SwitchOutcome.AlreadyReleased ? 0 : 1;
     }
 
     /// <summary>Read-only: prints Windows spatial sound state for every paired Apple device's audio endpoints.</summary>

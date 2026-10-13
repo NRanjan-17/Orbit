@@ -62,6 +62,22 @@
                 </StackPanel>
             </Border>
 
+            <!-- Connection / switching -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Connection" />
+                    <TextBlock x:Name="ConnectionText" Text="-" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="SwitchButton" Style="{StaticResource AccentButtonStyle}" Content="Switch to this PC" Click="OnSwitchClick" />
+                        <Button x:Name="ReleaseButton" Content="Release to other device" Click="OnReleaseClick" />
+                        <ProgressRing x:Name="SwitchProgress" IsActive="False" Width="20" Height="20" />
+                    </StackPanel>
+                    <TextBlock x:Name="SwitchResultText" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"
+                               Text="Apple's automatic switching between your Apple devices uses iCloud and is not available on Windows. Windows may not be able to take the headphones while your Mac is using them; release them on the Mac first if switching fails." />
+                </StackPanel>
+            </Border>
+
             <!-- Binding -->
             <Border Style="{StaticResource Card}">
                 <StackPanel Spacing="8">

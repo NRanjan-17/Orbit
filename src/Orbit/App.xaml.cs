@@ -17,6 +17,7 @@ public partial class App : Application
     private FlyoutWindow? _flyout;
     private TaskbarIcon? _tray;
     private OrbitService? _service;
+    private SwitchService? _switch;
     private bool _notificationsRegistered;
 
     public App()
@@ -25,6 +26,8 @@ public partial class App : Application
     }
 
     public static OrbitService? Service => (Current as App)?._service;
+
+    public static SwitchService? Switch => (Current as App)?._switch;
 
     public static MainWindow? MainWindow => (Current as App)?._window;
 
@@ -48,6 +51,15 @@ public partial class App : Application
         _service.LowBattery += (_, e) => Notify($"{e.Name}: battery low", $"About {Core.Parsing.ProximityPairingParser.FormatBattery(e.Percent)} left.");
         _service.AutoPaused += (_, a) => UpdateTray();
 
+        _switch = new SwitchService(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread(), _service);
+        _switch.Completed += (_, r) =>
+        {
+            if (r.Outcome is not Core.Switching.SwitchOutcome.AlreadyConnected and not Core.Switching.SwitchOutcome.AlreadyReleased)
+            {
+                Notify("Orbit", r.Message);
+            }
+        };
+
         CreateTray();
 
         var startInTray = Environment.GetCommandLineArgs().Contains("--tray");
@@ -57,6 +69,7 @@ public partial class App : Application
         }
 
         await _service.StartAsync();
+        await _switch.SyncAsync();
     }
 
     public void ShowMainWindow()
@@ -70,6 +83,7 @@ public partial class App : Application
     {
         IsExiting = true;
         _tray?.Dispose();
+        _switch?.Dispose();
         _service?.Dispose();
         if (_notificationsRegistered)
         {
@@ -85,6 +99,8 @@ public partial class App : Application
     {
         var menu = new MenuFlyout();
         menu.Items.Add(new MenuFlyoutItem { Text = "Open Orbit", Command = new RelayCommand(ShowMainWindow) });
+        menu.Items.Add(new MenuFlyoutItem { Text = "Switch to this PC", Command = new RelayCommand(() => _ = _switch?.SwitchToThisPcAsync()) });
+        menu.Items.Add(new MenuFlyoutItem { Text = "Release to other device", Command = new RelayCommand(() => _ = _switch?.ReleaseAsync()) });
         menu.Items.Add(new MenuFlyoutItem { Text = "Toggle auto-pause", Command = new RelayCommand(ToggleAutoPause) });
         menu.Items.Add(new MenuFlyoutSeparator());
         menu.Items.Add(new MenuFlyoutItem { Text = "Exit", Command = new RelayCommand(ExitApp) });

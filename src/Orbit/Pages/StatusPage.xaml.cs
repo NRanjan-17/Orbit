@@ -30,6 +30,12 @@ public sealed partial class StatusPage : Page
             Render();
             _ = LoadSpatialAsync();
         }
+
+        if (App.Switch is { } sw)
+        {
+            sw.Changed += OnServiceChanged;
+            RenderConnection();
+        }
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
@@ -38,9 +44,36 @@ public sealed partial class StatusPage : Page
         {
             _service.Changed -= OnServiceChanged;
         }
+
+        if (App.Switch is { } sw)
+        {
+            sw.Changed -= OnServiceChanged;
+        }
     }
 
-    private void OnServiceChanged(object? sender, EventArgs e) => Render();
+    private void OnServiceChanged(object? sender, EventArgs e)
+    {
+        Render();
+        RenderConnection();
+    }
+
+    private void RenderConnection()
+    {
+        if (App.Switch is not { } sw)
+        {
+            return;
+        }
+
+        ConnectionText.Text = !sw.IsAvailable ? "Choose your device below." : sw.IsConnected ? "Connected to this PC" : "Not connected to this PC";
+        SwitchButton.IsEnabled = sw.IsAvailable && !sw.IsBusy && !sw.IsConnected;
+        ReleaseButton.IsEnabled = sw.IsAvailable && !sw.IsBusy && sw.IsConnected;
+        SwitchProgress.IsActive = sw.IsBusy;
+        SwitchResultText.Text = sw.IsBusy ? "Working..." : sw.LastResult?.Message ?? "";
+    }
+
+    private async void OnSwitchClick(object sender, RoutedEventArgs e) => await App.Switch!.SwitchToThisPcAsync();
+
+    private async void OnReleaseClick(object sender, RoutedEventArgs e) => await App.Switch!.ReleaseAsync();
 
     private void Render()
     {
