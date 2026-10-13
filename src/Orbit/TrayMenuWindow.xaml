@@ -11,27 +11,32 @@
     <Grid>
         <Grid.Resources>
             <x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
+            <!-- Disabled items render as dimmed text, like a menu, not as a grey button. -->
+            <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+            <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="Transparent" />
             <Style x:Key="MenuButton" TargetType="Button">
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="Padding" Value="11,0" />
+                <Setter Property="MinHeight" Value="34" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
                 <Setter Property="CornerRadius" Value="4" />
             </Style>
         </Grid.Resources>
 
-        <StackPanel Padding="6" Spacing="2">
+        <StackPanel Padding="4" Spacing="1">
             <!-- Status header -->
-            <Grid Padding="12,10,12,8" ColumnSpacing="12">
+            <Grid Padding="11,8,11,6" ColumnSpacing="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Image Source="Assets/Orbit.png" Width="32" Height="32" VerticalAlignment="Center" />
+                <Image Source="Assets/Orbit.png" Width="24" Height="24" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1">
                     <TextBlock x:Name="NameText" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="StatusText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="StatusText" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Grid>
 
@@ -52,23 +57,23 @@
 
             <MenuFlyoutSeparator />
 
-            <Grid Padding="12,4" ColumnSpacing="12">
+            <Grid Padding="11,0" MinHeight="34" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <FontIcon Glyph="&#xE769;" FontSize="16" />
+                <FontIcon Glyph="&#xE769;" FontSize="16" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Auto-pause" VerticalAlignment="Center" />
                 <ToggleSwitch x:Name="AutoPauseSwitch" Grid.Column="2" OnContent="" OffContent="" MinWidth="0" Toggled="OnAutoPauseToggled" />
             </Grid>
-            <Grid Padding="12,4" ColumnSpacing="12">
+            <Grid Padding="11,0" MinHeight="34" ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <FontIcon Glyph="&#xE7B5;" FontSize="16" />
+                <FontIcon Glyph="&#xE7B5;" FontSize="16" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="Start with Windows" VerticalAlignment="Center" />
                 <ToggleSwitch x:Name="StartupSwitch" Grid.Column="2" OnContent="" OffContent="" MinWidth="0" Toggled="OnStartupToggled" />
             </Grid>
