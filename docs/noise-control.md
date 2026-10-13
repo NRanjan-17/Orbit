@@ -24,8 +24,9 @@ another reason not to ship them unverified.
 
 ## Can the mode be read without AACP?
 **No.** Tagged captures (protocol-findings.md F4): switching ANC / Transparency / Off changed none of the
-unencrypted advertisement bytes. If the mode is broadcast at all, it is inside the 16-byte encrypted tail,
-which needs a per-device key that is itself only obtainable over AACP [S2, LibrePods `proximity_keys.py`].
+unencrypted advertisement bytes. With the encryption key copied from the Mac, the encrypted tail was decrypted
+during another tagged session (F8): its content was identical in Noise Cancellation and Transparency. The mode
+is simply not broadcast; LibrePods reads it from AACP listening-mode (0x0D) notifications over L2CAP.
 
 ## Windows options
 

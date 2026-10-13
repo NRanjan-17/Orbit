@@ -69,6 +69,17 @@ Consequences in Orbit:
 - Status: decoding works on the Max (USB-C); the exact value is **pending one side-by-side check with the Mac**
   before it is marked VerifiedOnDevice.
 
+## F8. Noise mode is not in the broadcast, encrypted or not (2026-10-14 01:49, decrypted capture)
+- Max on head, connected; tags anc-on (100 frames) → transparency (30 frames) → anc-on (18 frames), each frame
+  decrypted with the confirmed key (Debug capture, `plain=` column).
+- Decrypted bytes 0-10 were identical across ANC and Transparency (`05 3F 00 00 xx xx xx 00 00 00 00`); only the
+  counter (byte 11) and bytes 12-15 changed. Together with F4 (unencrypted bytes unchanged): **the current
+  listening mode cannot be read from BLE advertisements.** It is only available over AACP (L2CAP PSM 0x1001),
+  as LibrePods does it (docs/noise-control.md).
+- Battery byte `0x3F` = 63 %, matching the value shown at the time.
+- OBSERVED: decrypted byte 0 alternated `04`/`05` exactly with unencrypted `d[10]` low nibble (`C4`/`C5`);
+  LibrePods names d[10] a connection state (`04` idle, `05` music). Not verified; not used.
+
 ## F6. Charging session (2026-10-13 23:43, 60 s, Max plugged in by USB-C and awake) — fixture `charging-session-max-usbc.csv`
 - **Battery — VERIFIED (2nd reading):** `d[6] = 06` all session; the Mac showed **65 %** → "60–69%". With F4
   (37 % ↔ `03`) the low-nibble rule holds at two different levels.
