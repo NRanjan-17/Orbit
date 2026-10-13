@@ -11,8 +11,6 @@
     <Grid>
         <Grid.Resources>
             <x:Double x:Key="ToggleSwitchThemeMinWidth">0</x:Double>
-            <Thickness x:Key="ToggleSwitchPreContentMargin">0</Thickness>
-            <Thickness x:Key="ToggleSwitchPostContentMargin">0</Thickness>
             <Style x:Key="MenuButton" TargetType="Button">
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />

@@ -25,9 +25,45 @@ public partial class App : Application
         InitializeComponent();
         UnhandledException += (_, e) =>
         {
-            Log.Error("unhandled", e.Exception);
+            Log.Write($"ERROR unhandled: {e.Message}\n{e.Exception}");
             e.Handled = true; // keep the tray app alive; the error is in orbit.log
         };
+
+        // WinUI often reports crashes without a managed stack. Record where argument/COM errors are first
+        // thrown so a crash can be traced to the calling code.
+        AppDomain.CurrentDomain.FirstChanceException += (_, e) =>
+        {
+            if (e.Exception is ArgumentException or System.Runtime.InteropServices.COMException)
+            {
+                Log.Write($"first-chance {e.Exception.GetType().Name}: {e.Exception.Message}\n{Environment.StackTrace}");
+            }
+        };
+    }
+
+    /// <summary>
+    /// "--selftest": opens the tray menu, the flyout and Settings on a timer so UI crashes can be reproduced
+    /// without clicking. Development aid only.
+    /// </summary>
+    private async Task RunSelfTestAsync()
+    {
+        var steps = new (string Name, Action Act)[]
+        {
+            ("tray menu", ShowTrayMenu),
+            ("tray menu again (toggle closed)", ShowTrayMenu),
+            ("flyout", ShowFlyout),
+            ("settings page", () => ShowMainWindow("settings")),
+            ("status page", () => ShowMainWindow("status")),
+        };
+
+        foreach (var (name, act) in steps)
+        {
+            await Task.Delay(2500);
+            Log.Write($"selftest: {name}");
+            act();
+        }
+
+        await Task.Delay(2500);
+        Log.Write("selftest: done");
     }
 
     public static OrbitService? Service => (Current as App)?._service;
@@ -89,6 +125,11 @@ public partial class App : Application
 
         await _service.StartAsync();
         await _switch.SyncAsync();
+
+        if (Environment.GetCommandLineArgs().Contains("--selftest"))
+        {
+            await RunSelfTestAsync();
+        }
     }
 
     public void ShowMainWindow() => ShowMainWindow(null);
