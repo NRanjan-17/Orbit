@@ -77,6 +77,17 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Diagnostic: "--test-toast" registers notifications, shows one, logs the outcome and exits.
+        // Runs before the single-instance check so it works while Orbit is already running.
+        if (Environment.GetCommandLineArgs().Contains("--test-toast"))
+        {
+            RegisterNotifications();
+            Notify("Orbit", "Test notification");
+            await Task.Delay(3000);
+            Exit();
+            return;
+        }
+
         _singleInstance = new Mutex(true, @"Local\Orbit.SingleInstance", out var isFirst);
         if (!isFirst)
         {
@@ -156,7 +167,7 @@ public partial class App : Application
         _tray?.Dispose();
         _switch?.Dispose();
         _service?.Dispose();
-        if (_notificationsRegistered)
+        if (_notificationsRegistered && !_classicToasts)
         {
             AppNotificationManager.Default.Unregister();
         }
@@ -309,16 +320,32 @@ public partial class App : Application
         }
     }
 
+    private bool _classicToasts;
+
     private void RegisterNotifications()
     {
         try
         {
             AppNotificationManager.Default.Register();
             _notificationsRegistered = true;
+            Log.Write("notifications: registered (Windows App SDK)");
+            return;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Notifications are optional; the app works without them.
+            Log.Write($"notifications: Windows App SDK register failed ({ex.Message.Split('\n')[0].Trim()}); using classic toasts");
+        }
+
+        try
+        {
+            Platform.Toasts.Register("Orbit", Path.Combine(AppContext.BaseDirectory, "Assets", "Orbit.png"));
+            _classicToasts = true;
+            _notificationsRegistered = true;
+            Log.Write("notifications: registered (classic toasts)");
+        }
+        catch (Exception ex)
+        {
+            Log.Error("notifications: classic toast registration failed", ex);
         }
     }
 
@@ -326,15 +353,26 @@ public partial class App : Application
     {
         if (!_notificationsRegistered)
         {
+            Log.Write($"notifications: not registered, skipped '{title}'");
             return;
         }
 
         try
         {
-            AppNotificationManager.Default.Show(new AppNotificationBuilder().AddText(title).AddText(body).BuildNotification());
+            if (_classicToasts)
+            {
+                Platform.Toasts.Show(title, body);
+            }
+            else
+            {
+                AppNotificationManager.Default.Show(new AppNotificationBuilder().AddText(title).AddText(body).BuildNotification());
+            }
+
+            Log.Write($"notifications: shown '{title}'");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Log.Error("notifications: show failed", ex);
         }
     }
 }
