@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Developer tool: terminal capture with keyboard tags, and capture analysis. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(WindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <RootNamespace>Orbit.Cli</RootNamespace>
+    <AssemblyName>orbit-cli</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Orbit.Core\Orbit.Core.csproj" />
+    <ProjectReference Include="..\..\src\Orbit.Platform\Orbit.Platform.csproj" />
+  </ItemGroup>
+
+</Project>
