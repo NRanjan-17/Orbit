@@ -62,6 +62,12 @@ public sealed class ExactBatteryResolver
     /// </summary>
     public string LastCheckDiagnostics { get; private set; } = "";
 
+    /// <summary>Number of different encrypted broadcasts examined so far.</summary>
+    public int DistinctTailsSeen => _frames;
+
+    /// <summary>Longest current run of consistent decodes (confirmation needs <see cref="ConfirmAfter"/>).</summary>
+    public int BestRun => _levels.Length == 0 ? 0 : _levels.Max(l => l.Count);
+
     /// <summary>
     /// Returns the exact battery for a headphone frame once the key is confirmed (otherwise null).
     /// <paramref name="coarse"/> is the verified 10 %-step reading from the same frame.
@@ -88,11 +94,12 @@ public sealed class ExactBatteryResolver
         }
 
         _frames++;
+
+        // Full plaintext per new tail: with the right key some bytes repeat across tails even if the battery
+        // isn't where LibrePods/CAPod expect it; with a wrong key every byte is random.
         LastCheckDiagnostics = string.Join("  ", _candidates.Select((k, i) =>
-        {
-            var p = ProximityKey.DecryptBlock(frame.EncryptedTail, k);
-            return $"{(i == 0 ? "as-entered" : "reversed")}: [1]={p[1]:X2} [2]={p[2]:X2} [3]={p[3]:X2}";
-        })) + $"  coarse={(coarse.HasValue ? coarse.Value : -1)}  distinct tails={_frames}";
+            $"{(i == 0 ? "as-entered" : "reversed")}: {Convert.ToHexString(ProximityKey.DecryptBlock(frame.EncryptedTail, k))}"))
+            + $"  coarse={(coarse.HasValue ? coarse.Value : -1)}  tail #{_frames}";
 
         for (var i = 0; i < _candidates.Length; i++)
         {

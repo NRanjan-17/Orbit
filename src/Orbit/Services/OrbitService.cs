@@ -144,6 +144,9 @@ public sealed class OrbitService : IDisposable
 
     private readonly Platform.KeyStore _keyStore = new(Path.Combine(AppPaths.DataDirectory, "device-key.bin"));
 
+    /// <summary>(different broadcasts checked, consistent decodes so far) while a key is being checked.</summary>
+    public (int Seen, int Consistent) KeyProgress => _tracker.Exact is { } e ? (e.DistinctTailsSeen, e.BestRun) : (0, 0);
+
     /// <summary>True when a key is stored on this PC (whatever its check state).</summary>
     public bool HasStoredKey => _keyStore.HasKey;
 
@@ -176,9 +179,10 @@ public sealed class OrbitService : IDisposable
             return;
         }
 
-        if (exact.State == Core.Crypto.KeyState.Checking && _loggedChecks < 15 && exact.LastCheckDiagnostics.Length > 0)
+        // One line per NEW broadcast examined (repeats of the same broadcast are not logged).
+        if (exact.State == Core.Crypto.KeyState.Checking && exact.DistinctTailsSeen != _loggedChecks)
         {
-            _loggedChecks++;
+            _loggedChecks = exact.DistinctTailsSeen;
             Log.Write($"exact battery check: {exact.LastCheckDiagnostics}");
         }
 

@@ -90,7 +90,9 @@ public sealed partial class StatusPage : Page
         KeyStatus.Text = state switch
         {
             Core.Crypto.KeyState.None => "No key: battery is shown in 10% steps.",
-            Core.Crypto.KeyState.Checking => "Key saved. Checking it against the next few broadcasts (wake the headphones if nothing happens)...",
+            Core.Crypto.KeyState.Checking => _service.KeyProgress is var (seen, ok)
+                ? $"Checking key: {ok} of {Core.Crypto.ExactBatteryResolver.ConfirmAfter} matching broadcasts ({seen} examined). The headphones change their broadcast every few seconds to a few minutes."
+                : "",
             Core.Crypto.KeyState.Confirmed => "Key confirmed: showing exact battery.",
             Core.Crypto.KeyState.Rejected => "This key does not decrypt these headphones' broadcasts. Check that you copied MagicAccEncKey (not MagicAccIRK) for this device.",
             _ => "",
