@@ -1,22 +1,31 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Animation;
 
 namespace Orbit.Controls;
 
 /// <summary>
 /// Head-and-headphones illustration. <see cref="IsWorn"/> = true slides the headphones onto the head,
 /// false lifts them off with a slight tilt, null (unknown / asleep) leaves them lifted and dimmed.
+/// Animated frame by frame on a timer with plain property values: a XAML Storyboard keeps holding its final
+/// value over later changes, which left the drawing showing "on head" while the chip said "off head".
 /// </summary>
 public sealed partial class WearIndicator : UserControl
 {
+    private static readonly TimeSpan Duration = TimeSpan.FromMilliseconds(420);
+    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(16) };
     private bool? _isWorn;
     private bool _initialised;
+    private (double Y, double Angle, double Opacity) _from;
+    private (double Y, double Angle, double Opacity) _to;
+    private DateTime _start;
 
     public WearIndicator()
     {
         InitializeComponent();
-        Apply(animate: false);
+        _timer.Tick += (_, _) => Step();
+        Unloaded += (_, _) => _timer.Stop();
+        _to = Target(null);
+        Set(_to);
     }
 
     public bool? IsWorn
@@ -30,43 +39,47 @@ public sealed partial class WearIndicator : UserControl
             }
 
             _isWorn = value;
-            Apply(animate: _initialised);
-            _initialised = true;
+            _to = Target(value);
+            if (!_initialised)
+            {
+                _initialised = true;
+                _timer.Stop();
+                Set(_to);
+                return;
+            }
+
+            // Start from wherever the drawing is right now, so interrupted animations never jump or stick.
+            _from = (PhonesTransform.TranslateY, PhonesTransform.Rotation, Headphones.Opacity);
+            _start = DateTime.UtcNow;
+            _timer.Start();
         }
     }
 
-    private void Apply(bool animate)
+    private static (double Y, double Angle, double Opacity) Target(bool? worn) => worn switch
     {
-        var (y, angle, opacity) = _isWorn switch
-        {
-            true => (0.0, 0.0, 1.0),
-            false => (-26.0, -8.0, 1.0),
-            null => (-26.0, -8.0, 0.35),
-        };
+        true => (0.0, 0.0, 1.0),
+        false => (-26.0, -8.0, 1.0),
+        null => (-26.0, -8.0, 0.35),
+    };
 
-        if (!animate)
+    private void Step()
+    {
+        var t = Math.Clamp((DateTime.UtcNow - _start) / Duration, 0, 1);
+        var e = t < 0.5 ? 4 * t * t * t : 1 - Math.Pow(-2 * t + 2, 3) / 2; // cubic ease-in-out
+        Set((Lerp(_from.Y, _to.Y, e), Lerp(_from.Angle, _to.Angle, e), Lerp(_from.Opacity, _to.Opacity, e)));
+        if (t >= 1)
         {
-            PhonesTransform.TranslateY = y;
-            PhonesTransform.Rotation = angle;
-            Headphones.Opacity = opacity;
-            return;
+            _timer.Stop();
+            Set(_to); // land exactly on the target
         }
-
-        var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
-        var duration = new Duration(TimeSpan.FromMilliseconds(420));
-        var storyboard = new Storyboard();
-        Add(storyboard, PhonesTransform, "TranslateY", y, duration, ease);
-        Add(storyboard, PhonesTransform, "Rotation", angle, duration, ease);
-        Add(storyboard, Headphones, "Opacity", opacity, duration, ease);
-        storyboard.Begin();
     }
 
-    private static void Add(Storyboard storyboard, DependencyObject target, string property, double to, Duration duration, EasingFunctionBase ease)
+    private void Set((double Y, double Angle, double Opacity) v)
     {
-        // Transform and opacity animations run on the composition thread; no dependent animation needed.
-        var animation = new DoubleAnimation { To = to, Duration = duration, EasingFunction = ease };
-        Storyboard.SetTarget(animation, target);
-        Storyboard.SetTargetProperty(animation, property);
-        storyboard.Children.Add(animation);
+        PhonesTransform.TranslateY = v.Y;
+        PhonesTransform.Rotation = v.Angle;
+        Headphones.Opacity = v.Opacity;
     }
+
+    private static double Lerp(double a, double b, double t) => a + (b - a) * t;
 }

@@ -56,7 +56,7 @@ public static class SpatialSoundController
                 ep.Id,
                 ep.Name,
                 config.IsSpatialAudioSupported,
-                string.IsNullOrEmpty(config.ActiveSpatialAudioFormat) ? null : config.ActiveSpatialAudioFormat,
+                IsOff(config.ActiveSpatialAudioFormat) ? null : config.ActiveSpatialAudioFormat,
                 formats));
         }
 
@@ -71,6 +71,22 @@ public static class SpatialSoundController
         return result.Status.ToString();
     }
 
+    /// <summary>
+    /// Windows reports "no spatial format" as an empty string or the all-zero GUID
+    /// ({00000000-0000-0000-0000-000000000000}, seen on the owner's PC). Both mean Off.
+    /// </summary>
+    public const string OffSubtype = "{00000000-0000-0000-0000-000000000000}";
+
+    public static bool IsOff(string? subtype) =>
+        string.IsNullOrEmpty(subtype) || (Guid.TryParse(subtype, out var g) && g == Guid.Empty);
+
     public static string NameOf(string? subtype) =>
-        subtype is null ? "Off" : KnownFormats.FirstOrDefault(f => string.Equals(f.Subtype, subtype, StringComparison.OrdinalIgnoreCase))?.Name ?? subtype;
+        IsOff(subtype) ? "Off" : KnownFormats.FirstOrDefault(f => string.Equals(f.Subtype, subtype, StringComparison.OrdinalIgnoreCase))?.Name ?? subtype!;
+
+    /// <summary>Reads the active format of one endpoint (null = Off).</summary>
+    public static string? GetActive(string endpointId)
+    {
+        var active = SpatialAudioDeviceConfiguration.GetForDeviceId(endpointId).ActiveSpatialAudioFormat;
+        return IsOff(active) ? null : active;
+    }
 }

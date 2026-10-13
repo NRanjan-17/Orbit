@@ -57,7 +57,7 @@
                                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" Visibility="Collapsed"
                                           ToolTipService.ToolTip="This value is decoded the way open-source projects describe, but it hasn't been confirmed against your Mac yet." />
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <controls:WrapPanel>
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="WornText" Text="Unknown" /></Border>
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="ChargingText" Text="Unknown" /></Border>
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="SignalText" Text="-" /></Border>
@@ -67,7 +67,7 @@
                                         <TextBlock Text="USB-C cable" />
                                     </StackPanel>
                                 </Border>
-                            </StackPanel>
+                            </controls:WrapPanel>
                             <TextBlock x:Name="Presence" Style="{StaticResource Secondary}" />
                         </StackPanel>
                     </Grid>
@@ -201,7 +201,7 @@
             </Expander>
 
             <TextBlock Style="{StaticResource Secondary}" FontSize="12" Margin="4,4,0,0"
-                       Text="Battery is broadcast in 10% steps and shown as a range unless an exact-battery key is set. Values marked (unverified) come from community documentation." />
+                       Text="Battery is broadcast in 10% steps and shown as a range unless an exact-battery key is set. An info icon next to a value means it is not yet verified on your headphones." />
         </StackPanel>
     </ScrollViewer>
 </Page>

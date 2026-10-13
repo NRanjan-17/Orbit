@@ -80,12 +80,12 @@ Consequences in Orbit:
 - OBSERVED: decrypted byte 0 alternated `04`/`05` exactly with unencrypted `d[10]` low nibble (`C4`/`C5`);
   LibrePods names d[10] a connection state (`04` idle, `05` music). Not verified; not used.
 
-## F9. No Bluetooth broadcasts while on the USB-C cable — OBSERVED (2026-10-14)
-- With the Max connected to the PC by USB-C (Windows: Apple USB device, vendor `05AC`, "AirPods Max USB Audio"),
-  Orbit heard no Proximity Pairing broadcasts ("not heard since …"), and "Switch to this PC" over Bluetooth failed.
-  Consistent with F5 (USB charging from the PC: zero broadcasts).
-- Consequence: on the cable, on-head and charging cannot be read; Orbit shows a "USB-C cable" state, dims last-known
-  values, and disables Bluetooth switching.
+## F9. Broadcasts on the USB-C cable are intermittent — OBSERVED (2026-10-14)
+- With the Max connected to the PC by USB-C (Windows: Apple USB device, vendor `05AC`, "AirPods Max USB Audio"):
+  at 02:14 Orbit heard no broadcasts for a long stretch (as in F5) and "Switch to this PC" over Bluetooth failed;
+  at 03:38, worn on the cable, a 30 s capture had 9 broadcasts, all `d[5]=2B` (on head) with the charging bit set.
+- So on the cable the Max broadcasts sometimes; when it does, on-head and charging read correctly. When it is quiet,
+  Orbit shows the last-known values dimmed. Bluetooth switching stays disabled on the cable.
 
 ## F10. The Max exposes no Apple RFCOMM service — VERIFIED (2026-10-14)
 - Uncached SDP query from Windows (`orbit-cli rfcomm`): exactly one RFCOMM service, `0x111E` (Hands-Free).

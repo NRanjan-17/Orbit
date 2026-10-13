@@ -34,7 +34,7 @@ internal static class Program
                 "capture" => Capture(args.Skip(1).ToArray()),
                 "analyze" or "analyse" => Analyze(args.Skip(1).ToArray()),
                 "devices" => Devices(),
-                "spatial" => Spatial(),
+                "spatial" => args.Length > 2 && args[1] == "--set" ? SpatialSet(args[2]) : Spatial(),
                 "diagnose" => Diagnose(),
                 "rfcomm" => Rfcomm(),
                 "connect" => Switch(args.Skip(1).ToArray(), connect: true),
@@ -242,6 +242,30 @@ internal static class Program
         }
         return result.Outcome is Orbit.Core.Switching.SwitchOutcome.Connected or Orbit.Core.Switching.SwitchOutcome.Released
             or Orbit.Core.Switching.SwitchOutcome.AlreadyConnected or Orbit.Core.Switching.SwitchOutcome.AlreadyReleased ? 0 : 1;
+    }
+
+    /// <summary>
+    /// Sets the spatial format of the paired Apple headphones' "Headphones" output and reads it back.
+    /// value: sonic | dolby | off (off = the all-zero GUID Windows reports when no format is active).
+    /// </summary>
+    private static int SpatialSet(string value)
+    {
+        var subtype = value switch
+        {
+            "sonic" => Windows.Media.Audio.SpatialAudioFormatSubtype.WindowsSonic,
+            "dolby" => Windows.Media.Audio.SpatialAudioFormatSubtype.DolbyAtmosForHeadphones,
+            "off" => Orbit.Platform.Audio.SpatialSoundController.OffSubtype,
+            _ => throw new ArgumentException("use sonic, dolby or off"),
+        };
+
+        var device = PairedDeviceCatalog.GetPairedAsync().GetAwaiter().GetResult().First(d => d.IsApple && d.ContainerId is not null);
+        var states = Orbit.Platform.Audio.SpatialSoundController.GetForContainerAsync(device.ContainerId!.Value).GetAwaiter().GetResult();
+        var endpoint = states.FirstOrDefault(s => s.EndpointName.StartsWith("Headphones", StringComparison.OrdinalIgnoreCase)) ?? states.First();
+        Console.WriteLine($"{endpoint.EndpointName}: before = {Orbit.Platform.Audio.SpatialSoundController.NameOf(endpoint.ActiveSubtype)}");
+        var status = Orbit.Platform.Audio.SpatialSoundController.SetAsync(endpoint.EndpointId, subtype).GetAwaiter().GetResult();
+        Thread.Sleep(500);
+        Console.WriteLine($"set {value}: {status}; after = {Orbit.Platform.Audio.SpatialSoundController.NameOf(Orbit.Platform.Audio.SpatialSoundController.GetActive(endpoint.EndpointId))}");
+        return 0;
     }
 
     private static string StateName(uint state) => state switch

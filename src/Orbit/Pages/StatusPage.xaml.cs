@@ -176,8 +176,9 @@ public sealed partial class StatusPage : Page
         }
         else if (s.UsbConnected)
         {
-            // Observed on the owner's Max (protocol-findings F9): no Bluetooth broadcasts while on the cable.
-            Presence.Text = "Connected by USB-C cable. While on the cable the headphones stop broadcasting over Bluetooth, so on-head and charging can't be read; values shown are from the last broadcast.";
+            // Observed on the owner's Max (protocol-findings F9): broadcasts on the cable are intermittent.
+            Presence.Text = string.Create(CultureInfo.CurrentCulture,
+                $"Connected by USB-C cable. On the cable the headphones only broadcast now and then; values shown are from {s.LastKnown?.LastSeen.LocalDateTime:t}.");
         }
         else if (s.LastKnown is { } last)
         {
@@ -287,7 +288,7 @@ public sealed partial class StatusPage : Page
             _spatialEndpointId = state.EndpointId;
             SpatialPicker.Tag = state.AvailableFormats;
             SpatialPicker.IsEnabled = true;
-            SpatialStatus.Text = $"{SpatialSoundController.NameOf(state.ActiveSubtype)} · {state.EndpointName}";
+            SpatialStatus.Text = $"{SpatialSoundController.NameOf(state.ActiveSubtype)} · {CleanEndpointName(state.EndpointName)}";
 
             // Dolby Atmos for Headphones only shows up once Dolby's paid Dolby Access app is installed.
             var hasDolby = state.AvailableFormats.Any(f => f.Subtype == Windows.Media.Audio.SpatialAudioFormatSubtype.DolbyAtmosForHeadphones);
@@ -299,6 +300,10 @@ public sealed partial class StatusPage : Page
         }
     }
 
+    /// <summary>"Headphones (Name  - Find My)" -> "Headphones (Name)".</summary>
+    private static string CleanEndpointName(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(name.Replace(" - Find My", "", StringComparison.OrdinalIgnoreCase), @"\s{2,}", " ").Replace(" )", ")");
+
     private async void OnSpatialPicked(object sender, SelectionChangedEventArgs e)
     {
         if (_updatingPickers || _spatialEndpointId is null || SpatialPicker.SelectedItem is not string name)
@@ -306,18 +311,16 @@ public sealed partial class StatusPage : Page
             return;
         }
 
-        if (name == SpatialOff)
-        {
-            // The public API sets a format but documents no "off" value; don't guess one.
-            SpatialStatus.Text = "To turn spatial sound off, use Windows sound settings (button on the right).";
-            return;
-        }
-
-        var format = ((IEnumerable<SpatialFormat>)SpatialPicker.Tag).First(f => f.Name == name);
+        // "Off" = the all-zero format GUID Windows itself reports when nothing is active; setting it was verified on
+        // the owner's Max (Off -> Windows Sonic -> Off, read back each time, 2026-10-14).
+        var subtype = name == SpatialOff
+            ? SpatialSoundController.OffSubtype
+            : ((IEnumerable<SpatialFormat>)SpatialPicker.Tag).First(f => f.Name == name).Subtype;
         try
         {
-            var status = await SpatialSoundController.SetAsync(_spatialEndpointId, format.Subtype);
-            SpatialStatus.Text = status == "Succeeded" ? $"{name} is on." : $"Windows did not apply {name}: {status}.";
+            var status = await SpatialSoundController.SetAsync(_spatialEndpointId, subtype);
+            SpatialStatus.Text = status != "Succeeded" ? $"Windows did not apply {name}: {status}."
+                : name == SpatialOff ? "Spatial sound is off." : $"{name} is on.";
         }
         catch (Exception ex)
         {
