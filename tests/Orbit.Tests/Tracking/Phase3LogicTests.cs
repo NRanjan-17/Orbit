@@ -70,6 +70,8 @@ public class AutoPauseControllerTests
         public bool Playing { get => Sessions[0].IsPlaying; set => Sessions[0].IsPlaying = value; }
 
         public Task<IReadOnlyList<IMediaSession>> GetSessionsAsync() => Task.FromResult<IReadOnlyList<IMediaSession>>(Sessions);
+
+        public event EventHandler? Changed { add { } remove { } }
     }
 
     private static Reading<bool> Worn(bool v, Confidence c = Confidence.VerifiedOnDevice) => new(v, c, "test");

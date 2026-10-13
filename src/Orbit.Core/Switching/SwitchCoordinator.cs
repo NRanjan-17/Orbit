@@ -54,7 +54,7 @@ public sealed class SwitchCoordinator(IAudioConnector connector, IConnectionStat
     /// <summary>How long to wait for the connection to appear after each request.</summary>
     public TimeSpan VerifyTimeout { get; init; } = TimeSpan.FromSeconds(8);
 
-    public TimeSpan VerifyPollInterval { get; init; } = TimeSpan.FromMilliseconds(250);
+    public TimeSpan VerifyPollInterval { get; init; } = TimeSpan.FromMilliseconds(150);
 
     public TimeSpan FailureCooldown { get; init; } = TimeSpan.FromSeconds(30);
 

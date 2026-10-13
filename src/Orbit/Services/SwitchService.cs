@@ -41,6 +41,10 @@ public sealed class SwitchService : IDisposable
             await CheckAutoConnectAsync();
         };
         _playbackTimer.Start();
+
+        // React the moment playback starts (event-driven); the 2 s timer above remains a fallback.
+        _media.Changed += (_, _) => _ui.TryEnqueue(async () => await CheckAutoConnectAsync());
+        _ = _media.StartWatchingAsync();
     }
 
     /// <summary>Raised on the UI thread whenever connection state or the last result changes.</summary>
@@ -172,10 +176,13 @@ public sealed class SwitchService : IDisposable
 
     private async Task CheckAutoConnectAsync()
     {
-        if (!_orbit.Settings.AutoConnect || _coordinator is null)
+        // Not on the USB-C cable: Bluetooth switching fails there (protocol-findings F9).
+        if (!_orbit.Settings.AutoConnect || _coordinator is null || _orbit.UsbConnected)
         {
             return;
         }
+
+        RefreshAudioState(); // the cached state may be up to 2 s old when an event triggers this
 
         bool playing;
         try

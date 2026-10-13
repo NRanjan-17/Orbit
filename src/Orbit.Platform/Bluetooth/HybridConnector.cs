@@ -24,7 +24,13 @@ public sealed class HybridConnector(Guid containerId, ulong address, string name
 
     public async Task<bool> RequestConnectAsync(CancellationToken ct)
     {
-        var enabled = await _services.EnableAsync(ct);
+        // Re-enabling services is only needed after a full release, which removes the audio drivers: the
+        // endpoints then report DEVICE_STATE_NOTPRESENT (4) (multi-device.md test log). If any endpoint is still
+        // present (e.g. unplugged = 8), go straight to the fast KS reconnect (3-4 s in testing).
+        const uint NotPresent = 4;
+        var endpoints = _ks.GetEndpointStates();
+        var driversRemoved = endpoints.Count == 0 || endpoints.All(e => e.State == NotPresent);
+        var enabled = driversRemoved && await _services.EnableAsync(ct);
         var ks = await _ks.RequestConnectAsync(ct);
         return enabled || ks;
     }

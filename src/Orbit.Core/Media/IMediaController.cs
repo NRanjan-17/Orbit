@@ -24,4 +24,7 @@ public interface IMediaController
 {
     /// <summary>All current media sessions, not only the one Windows considers "current".</summary>
     Task<IReadOnlyList<IMediaSession>> GetSessionsAsync();
+
+    /// <summary>Raised (on any thread) when a session appears/disappears or its playback state changes.</summary>
+    event EventHandler? Changed;
 }

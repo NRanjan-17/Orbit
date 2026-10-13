@@ -67,6 +67,8 @@ public class TaggedSessionTests
         public Task<bool> PauseAsync() { IsPlaying = false; return Task.FromResult(true); }
 
         public Task<bool> PlayAsync() { IsPlaying = true; return Task.FromResult(true); }
+
+        public event EventHandler? Changed { add { } remove { } }
     }
 
     [Fact]
