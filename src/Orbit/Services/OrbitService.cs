@@ -144,6 +144,9 @@ public sealed class OrbitService : IDisposable
 
     private readonly Platform.KeyStore _keyStore = new(Path.Combine(AppPaths.DataDirectory, "device-key.bin"));
 
+    /// <summary>True when a key is stored on this PC (whatever its check state).</summary>
+    public bool HasStoredKey => _keyStore.HasKey;
+
     /// <summary>State of the user's encryption key for exact battery (None / Checking / Confirmed / Rejected).</summary>
     public Core.Crypto.KeyState KeyState => _tracker.Exact?.State ?? Core.Crypto.KeyState.None;
 

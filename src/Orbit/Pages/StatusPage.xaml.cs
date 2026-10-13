@@ -86,7 +86,7 @@ public sealed partial class StatusPage : Page
     private void RenderKey()
     {
         var state = _service!.KeyState;
-        RemoveKeyButton.IsEnabled = state != Core.Crypto.KeyState.None;
+        RemoveKeyButton.IsEnabled = _service.HasStoredKey;
         KeyStatus.Text = state switch
         {
             Core.Crypto.KeyState.None => "No key: battery is shown in 10% steps.",
