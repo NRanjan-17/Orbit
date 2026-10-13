@@ -37,6 +37,12 @@ public sealed class OrbitService : IDisposable
             Changed?.Invoke(this, EventArgs.Empty);
         });
 
+        _usb.Changed += (_, _) => _ui.TryEnqueue(() =>
+        {
+            Log.Write($"usb audio: {(_usb.IsConnected ? "connected (" + _usb.DeviceName + ")" : "disconnected")}");
+            Changed?.Invoke(this, EventArgs.Empty);
+        });
+
         _pruneTimer = ui.CreateTimer();
         _pruneTimer.Interval = TimeSpan.FromSeconds(5);
         _pruneTimer.Tick += (_, _) =>
@@ -50,6 +56,13 @@ public sealed class OrbitService : IDisposable
     }
 
     public event EventHandler? Changed;
+
+    private readonly Platform.Audio.UsbAudioMonitor _usb = new();
+
+    /// <summary>True while Apple headphones are connected to this PC by USB-C cable (USB Audio).</summary>
+    public bool UsbConnected => _usb.IsConnected;
+
+    public string? UsbDeviceName => _usb.DeviceName;
 
     /// <summary>Raised with (device name, battery percent) when the battery crosses the warning threshold.</summary>
     public event EventHandler<(string Name, int Percent)>? LowBattery;
@@ -375,5 +388,6 @@ public sealed class OrbitService : IDisposable
     {
         _pruneTimer.Stop();
         _scanner.Dispose();
+        _usb.Dispose();
     }
 }

@@ -20,7 +20,9 @@ public sealed class AutoPauseController
 {
     private readonly IMediaController _media;
     private readonly Debouncer<bool> _worn;
-    private string? _pausedSessionId;
+    // The exact sessions Orbit paused (references, not app IDs: several Chrome tabs share one app ID, and the
+    // session Windows calls "current" is often not the one that was playing, e.g. a background browser tab).
+    private List<IMediaSession> _paused = [];
 
     public AutoPauseController(IMediaController media, int requiredReadings = 2, TimeSpan? minimumDuration = null)
     {
@@ -37,8 +39,8 @@ public sealed class AutoPauseController
     /// <summary>Debounced on-head state; null until the first stable reading.</summary>
     public bool? Worn => _worn.Stable;
 
-    /// <summary>True while Orbit is holding a session it paused.</summary>
-    public bool HoldingPause => _pausedSessionId is not null;
+    /// <summary>True while Orbit is holding sessions it paused.</summary>
+    public bool HoldingPause => _paused.Count > 0;
 
     public async Task<AutoPauseAction> OnReadingAsync(Reading<bool> worn, DateTimeOffset at)
     {
@@ -57,7 +59,7 @@ public sealed class AutoPauseController
     public void Reset()
     {
         _worn.Reset();
-        _pausedSessionId = null;
+        _paused = [];
     }
 
     private async Task<AutoPauseAction> OnTakenOffAsync()
@@ -67,37 +69,41 @@ public sealed class AutoPauseController
             return AutoPauseAction.None;
         }
 
-        var current = await _media.GetCurrentAsync();
-        if (current is not { IsPlaying: true })
+        // Pause every session that is actually playing, whichever app or tab is in front.
+        var paused = new List<IMediaSession>();
+        foreach (var session in (await _media.GetSessionsAsync()).Where(s => s.IsPlaying))
         {
-            return AutoPauseAction.None;
+            if (await session.PauseAsync())
+            {
+                paused.Add(session);
+            }
         }
 
-        if (await _media.PauseAsync(current.SessionId))
-        {
-            _pausedSessionId = current.SessionId;
-            return AutoPauseAction.Paused;
-        }
-
-        return AutoPauseAction.None;
+        _paused = paused;
+        return paused.Count > 0 ? AutoPauseAction.Paused : AutoPauseAction.None;
     }
 
     private async Task<AutoPauseAction> OnPutOnAsync()
     {
-        var sessionId = _pausedSessionId;
-        _pausedSessionId = null;
-        if (!ResumeEnabled || sessionId is null)
+        var paused = _paused;
+        _paused = [];
+        if (!ResumeEnabled || paused.Count == 0)
         {
             return AutoPauseAction.None;
         }
 
-        // If the user already resumed it, or started something else, leave it alone.
-        var current = await _media.GetCurrentAsync();
-        if (current is { IsPlaying: true })
+        // If the user already resumed something or started other playback meanwhile, leave everything alone.
+        if ((await _media.GetSessionsAsync()).Any(s => s.IsPlaying))
         {
             return AutoPauseAction.None;
         }
 
-        return await _media.PlayAsync(sessionId) ? AutoPauseAction.Resumed : AutoPauseAction.None;
+        var resumed = false;
+        foreach (var session in paused.Where(s => s.IsAlive))
+        {
+            resumed |= await session.PlayAsync();
+        }
+
+        return resumed ? AutoPauseAction.Resumed : AutoPauseAction.None;
     }
 }

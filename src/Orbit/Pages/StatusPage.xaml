@@ -61,6 +61,12 @@
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="WornText" Text="Unknown" /></Border>
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="ChargingText" Text="Unknown" /></Border>
                                 <Border Style="{StaticResource Chip}"><TextBlock x:Name="SignalText" Text="-" /></Border>
+                                <Border x:Name="UsbChip" Style="{StaticResource Chip}" Visibility="Collapsed">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE88E;" FontSize="12" />
+                                        <TextBlock Text="USB-C cable" />
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
                             <TextBlock x:Name="Presence" Style="{StaticResource Secondary}" />
                         </StackPanel>

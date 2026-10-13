@@ -186,6 +186,15 @@
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE7E7;" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource RowTitle}" Text="Connection notifications" />
+                    <TextBlock Style="{StaticResource RowDescription}" Text="Notify when the headphones connect to this PC by USB-C cable or Bluetooth." />
+                </StackPanel>
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="ConnectToastToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+            </Grid>
+            <Grid Style="{StaticResource Row}">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xEBA7;" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Low-battery notification" />

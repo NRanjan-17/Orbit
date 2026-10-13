@@ -36,6 +36,7 @@ internal static class Program
                 "devices" => Devices(),
                 "spatial" => Spatial(),
                 "diagnose" => Diagnose(),
+                "rfcomm" => Rfcomm(),
                 "connect" => Switch(args.Skip(1).ToArray(), connect: true),
                 "disconnect" => Switch(args.Skip(1).ToArray(), connect: false),
                 _ => Usage(),
@@ -148,6 +149,27 @@ internal static class Program
         return 0;
 
         static string Fmt(ushort? v) => v is { } x ? $"0x{x:X4}" : "-";
+    }
+
+    /// <summary>
+    /// Read-only: asks each paired Apple device for its RFCOMM services (uncached SDP query). Used to check claims
+    /// that Apple's accessory protocol is reachable through WinRT RFCOMM; community sources put it on L2CAP PSM 0x1001.
+    /// </summary>
+    private static int Rfcomm()
+    {
+        foreach (var d in PairedDeviceCatalog.GetPairedAsync().GetAwaiter().GetResult().Where(d => d.IsApple))
+        {
+            using var device = Windows.Devices.Bluetooth.BluetoothDevice.FromIdAsync(d.DeviceId).AsTask().GetAwaiter().GetResult();
+            var result = device.GetRfcommServicesAsync(Windows.Devices.Bluetooth.BluetoothCacheMode.Uncached).AsTask().GetAwaiter().GetResult();
+            Console.WriteLine($"{d.Name}: query {result.Error}, {result.Services.Count} RFCOMM service(s)");
+            // ServiceId only: ConnectionServiceName embeds the local and remote Bluetooth addresses.
+            foreach (var s in result.Services)
+            {
+                Console.WriteLine($"  {s.ServiceId.Uuid}");
+            }
+        }
+
+        return 0;
     }
 
     /// <summary>Read-only: checks the connect/disconnect plumbing for each paired Apple device without sending anything.</summary>

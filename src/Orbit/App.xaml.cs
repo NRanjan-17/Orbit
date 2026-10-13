@@ -115,6 +115,9 @@ public partial class App : Application
             }
         };
 
+        _service.Changed += (_, _) => NotifyConnectionChanges();
+        _switch.Changed += (_, _) => NotifyConnectionChanges();
+
         CreateTray();
 
         var startInTray = Environment.GetCommandLineArgs().Contains("--tray");
@@ -198,6 +201,42 @@ public partial class App : Application
         {
             _tray.ToolTipText = Display.Tooltip(_service.DisplayName, _service.Current, _service.LastKnown, _service.Settings.ShowUnverified);
             UpdateTrayIcon();
+        }
+    }
+
+    private bool? _lastUsb;
+    private bool? _lastBluetooth;
+
+    /// <summary>
+    /// Toast when the headphones newly connect by USB-C cable or Bluetooth audio. The first observation after
+    /// start-up only records the state, so already-connected headphones don't trigger a notification.
+    /// </summary>
+    private void NotifyConnectionChanges()
+    {
+        if (_service is null || _switch is null)
+        {
+            return;
+        }
+
+        var name = _service.DisplayName;
+        var usb = _service.UsbConnected;
+        if (_lastUsb is { } wasUsb && usb != wasUsb && _service.Settings.ConnectToast)
+        {
+            Notify(name, usb ? "Connected by USB-C cable." : "USB-C cable disconnected.");
+        }
+
+        _lastUsb = usb;
+
+        // Bluetooth state is only meaningful once switching knows the device.
+        if (_switch.IsAvailable)
+        {
+            var bt = _switch.IsConnected;
+            if (_lastBluetooth is { } wasBt && bt && !wasBt && _service.Settings.ConnectToast)
+            {
+                Notify(name, "Connected to this PC over Bluetooth.");
+            }
+
+            _lastBluetooth = bt;
         }
     }
 

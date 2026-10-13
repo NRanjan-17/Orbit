@@ -1,8 +1,10 @@
 # Orbit
 
 A Windows companion app for Apple wireless headphones, designed around the **AirPods Max (USB-C)**:
-battery and on-head status from Bluetooth LE advertisements, auto-pause, one-click switching between this PC
-and your Mac, a tray icon and flyout, and Windows spatial sound for the headphones' output.
+battery (optionally the exact %) and on-head status from Bluetooth LE advertisements, auto-pause and resume,
+one-click switching between this PC and your Mac, USB-C cable detection, connection notifications, a tray icon
+(optionally showing the battery) with a menu and flyout, an animated on-head indicator, a chime in the
+headphones, and Windows spatial sound for the headphones' output.
 
 Orbit is an independent project, not affiliated with or endorsed by Apple. Product names such as
 "AirPods Max" appear only as detected device names.
@@ -19,12 +21,18 @@ dotnet test --solution Orbit.slnx
 ```
 
 On first start Orbit binds to your paired Apple headphones automatically (or choose them on the Status page).
-The binding, and all settings, are stored in `%LOCALAPPDATA%\Orbit\settings.json`; nothing about your device
-is stored in this repository. Closing the window keeps Orbit in the tray; use the tray menu's **Exit** to quit.
+The binding and all settings are stored in `%LOCALAPPDATA%\Orbit\settings.json`; nothing about your device is
+stored in this repository. Closing the window keeps Orbit in the tray; use the tray menu's **Quit** to exit.
+`Orbit.exe --tray` starts without a window (used by *Start with Windows*); `--selftest` opens the tray menu,
+flyout and pages on a timer and logs any error to `%LOCALAPPDATA%\Orbit\orbit.log`.
 
-> **Smart App Control.** If Windows' Smart App Control is on, it may block the locally built, unsigned
-> `Orbit.exe` ("An Application Control policy has blocked this file"). This happened on the development PC.
-> See [Known limits](#known-limits). The `orbit-cli` tool is a separate executable and may still run.
+> **Smart App Control** may block the locally built, unsigned `Orbit.exe` ("An Application Control policy has
+> blocked this file"). See [Known limits](#known-limits). The `orbit-cli` tool is a separate executable.
+
+### Exact battery (optional)
+Copy the headphones' `MagicAccEncKey` once from your Mac's keychain and paste it on the Status page; Orbit then
+shows the exact percentage instead of a 10 % range. Steps: [docs/exact-battery.md](docs/exact-battery.md).
+The key is stored with Windows DPAPI for your account only and is never written to settings, logs or the repo.
 
 ### Developer tool: `orbit-cli`
 `tools\Orbit.Cli\bin\Debug\net10.0-windows10.0.19041.0\orbit-cli.exe`
@@ -35,83 +43,82 @@ is stored in this repository. Closing the window keeps Orbit in the tray; use th
 | `analyze <csv>` | Groups frames per device and lists bytes/bits that differ between tags |
 | `devices` | Paired devices with their Device ID (vendor/product), no addresses |
 | `diagnose` | Read-only check of the connect/disconnect plumbing |
-| `connect` / `disconnect [--method ks\|service]` | Switch the headphones to/from this PC (changes real state) |
+| `rfcomm` | Read-only list of the device's RFCOMM services |
+| `connect` / `disconnect [--method hybrid\|ks\|service] [--watch n]` | Switch the headphones to/from this PC (changes real state) |
 | `spatial` | Read-only Windows spatial sound state of the headphones' outputs |
 
-The app's **Debug: Capture** page does the same capture with buttons.
+The app's **Debug** page does the same capture with buttons and, with a confirmed exact-battery key, also
+records the decrypted data.
 
 ## What is verified vs unverified
-"Verified" means confirmed on the owner's AirPods Max (USB-C) by tagged captures or by Windows itself
-([docs/protocol-findings.md](docs/protocol-findings.md)). Community sources are cited in
-[docs/sources.md](docs/sources.md). The UI follows the same policy: verified values are shown plainly,
-multi-source community values are marked *(unverified)*, single-source values are hidden unless
-**Settings → Show unverified readings** is on, and only verified readings drive auto-pause and low-battery alerts.
+"Verified" means confirmed on the owner's AirPods Max (USB-C) by tagged captures, by Windows itself, or by the
+owner trying it ([docs/protocol-findings.md](docs/protocol-findings.md)). Community sources are cited in
+[docs/sources.md](docs/sources.md). In the app, values not yet verified carry an ⓘ icon with a tooltip next to the
+battery; single-source values are hidden unless **Settings → Show unverified readings** is on; only verified
+readings drive auto-pause and low-battery alerts.
 
 | Item | Status |
 |---|---|
 | Frame structure (27 bytes, type 0x07, 16-byte encrypted tail) | ✅ Verified |
 | Device recognition: Windows Device ID product ↔ advertised model bytes | ✅ Verified |
-| On-head: `d[5]` = `2B` on / `01` off (exact values; `3F` in case is treated as unknown) | ✅ Verified (3 tagged transitions) |
-| Battery: low nibble of `d[6]`, 10 % steps, shown as a range | ✅ Verified (two readings: Mac 37 % ↔ 3, 65 % ↔ 6) |
-| Exact battery % (optional, with the key copied from your Mac; [docs/exact-battery.md](docs/exact-battery.md)) | ⚠️ Community-documented (LibrePods, CAPod); cross-checked against the coarse reading; not yet confirmed on your Max |
-| Charging: `d[7] & 0x10`, held 30 s to bridge dropouts | ✅ Verified (set 28/37 frames plugged in, 1/432 unplugged) |
-| Noise mode in advertisements | ❌ Not present in unencrypted bytes (verified) |
-| "Connected to another device" bit | ❌ Not present in unencrypted bytes (verified) |
-| Other AirPods models (LibrePods rules, cross-checked with AirPodsDesktop/OpenPods) | ⚠️ Unverified on real hardware; decoder matches AirPodsDesktop's sanitised AirPods 5 captures |
-| Auto-pause / resume logic | ✅ Unit-tested; ⏳ not yet tried with real playback |
+| On-head: `d[5]` = `2B` on / `01` off (exact values; `3F` in case → unknown) | ✅ Verified (tagged transitions) |
+| Battery: low nibble of `d[6]`, 10 % steps | ✅ Verified (Mac 37 % ↔ 3, 65 % ↔ 6) |
+| Exact battery % from the decrypted tail (key from your Mac) | ✅ Decrypts on the Max: byte 1 = battery (65 %, 63 %, inside the verified band). ⏳ Press **It matches my Mac** once after comparing |
+| Charging: `d[7] & 0x10`, held 30 s to bridge dropouts | ✅ Verified |
+| Auto-pause / resume with real playback | ✅ Verified by the owner; background-tab resume fixed 2026-10-14 (⏳ re-check) |
 | Switch to this PC (incl. while the Mac is playing) | ✅ Verified: 3–4 s |
 | Release to other device (hybrid: KS + service toggle) | ✅ Service-toggle release verified; ⏳ hybrid release → Mac connect to confirm |
-| Status page with live data (battery, charging, on head, signal) | ✅ Seen on screen |
-| Chime in the headphones (Orbit's own sound) | ⏳ Built; listen test needed |
-| Windows spatial sound selector | ⏳ Not yet tried |
-| Tray, flyout, toasts, start with Windows, hotkey, auto-connect | ⏳ Built; not yet tried |
+| USB-C cable detection | ✅ Detected (Apple USB audio device); while on the cable the Max does not broadcast, so on-head/charging are unavailable |
+| Connection notifications (USB-C / Bluetooth) | ⏳ Built; not yet tried |
+| Status page, animated on-head indicator, tray menu, flyout, battery tray icon | ✅ Seen on screen; self-test opens them without errors |
+| Chime in the headphones (Orbit's own sound) | ✅ Verified by the owner; deeper "bass" version ⏳ needs a listen |
+| Windows spatial sound selector | ✅ Verified by the owner |
+| Dolby Atmos for Headphones | Not bundled (Dolby's paid Dolby Access app); appears in the spatial list once installed |
+| Start with Windows, low-battery toast, hotkey, auto-connect | ⏳ Built; not yet tried |
+| Noise mode in advertisements | ❌ Not broadcast at all, readable or encrypted (verified, F4/F8) |
+| "Connected to another device" | ⏳ Likely in the decrypted tail (bytes 4-6 = connected host's address, F11); one capture with the Mac needed |
+| Other AirPods models (LibrePods rules, cross-checked with AirPodsDesktop/OpenPods) | ⚠️ Unverified on real hardware |
 
 ## Known limits
 - **Noise control and Apple Spatial Audio: not available on Windows.** They need Apple's accessory protocol over
-  L2CAP, which Windows has no public API for. Options and risks: [docs/noise-control.md](docs/noise-control.md).
-- **No automatic Apple-style switching.** That is iCloud-coordinated. Orbit offers manual switch/release, a
-  hotkey and optional auto-connect, and cannot know whether the Mac is holding the headphones:
-  [docs/multi-device.md](docs/multi-device.md).
-- **The Max stops advertising when idle, charging, or in the Smart Case.** Orbit then shows "asleep or out of
-  range" with the last known values and time.
-- **Battery resolution is 10 %**, because that is all the advertisement carries.
-- **Media apps without a Windows media session** (some browser players, older apps) cannot be auto-paused.
-- **Smart App Control** can block the unsigned build. Choices: sign the build with a certificate Windows
-  trusts (e.g. a code-signing service), or turn Smart App Control off (Windows Security → App & browser
-  control). On older Windows 11 builds turning it off was one-way; current builds let you switch it back on.
-- **The headphones' own connection chime can't be triggered** (it needs Apple's accessory protocol). Orbit can
-  play its own short chime through the headphones instead (Settings → Chime).
+  L2CAP, which Windows exposes only to kernel drivers; the Max has no Apple RFCOMM service (F10), and the mode is
+  not in its broadcasts (F8). Driver options and risks, and why the community-signed MagicAAP install is not
+  recommended: [docs/noise-control.md](docs/noise-control.md).
+- **No automatic Apple-style switching.** That is iCloud-coordinated. Orbit offers manual switch/release, a hotkey
+  and optional auto-connect: [docs/multi-device.md](docs/multi-device.md).
+- **The Max stops broadcasting when idle, in the Smart Case, or on the USB-C cable.** Orbit then shows the last
+  known values dimmed, with the time they were seen.
+- **Battery resolution is 10 %** from the readable broadcast; the exact % needs the key from your Mac.
+- **Media apps without a Windows media session** cannot be auto-paused.
+- **Smart App Control** can block the unsigned build: sign it with a trusted certificate, or turn Smart App Control
+  off (Windows Security → App & browser control; current Windows 11 builds let you turn it back on).
+- **The headphones' own chime can't be triggered** from Windows; Orbit plays its own chime instead.
 
 ## Test checklist (your hardware)
-1. **Status:** Max out of the case, near the PC → Status shows battery range and *On head / Off head* within a
-   few seconds of putting it on / taking it off.
-2. **Battery spot checks:** now and then, check that the Mac's battery % falls inside Orbit's range.
-3. **Auto-pause:** play music on the PC through the Max, take it off → pauses within ~3 s; put it on → resumes.
-   Pause manually, take off, put on → must *not* resume.
-4. **Charging:** plug in USB-C with the Max awake (out of case, picked up) → Charging shows "Yes" and stays
-   "Yes"; unplug → "No" within about 30 s.
-5. **Switching** (CLI or app): the four steps in [docs/multi-device.md](docs/multi-device.md#test-procedure-cli-works-even-while-the-gui-is-blocked);
-   most important is *connect from the PC while the Mac is playing*.
-6. **Spatial sound:** with the Max connected to the PC, pick Windows Sonic on the Status page; check Windows
-   Settings → Sound shows the same.
-7. **Tray:** hover → tooltip with battery; click → flyout; right-click → menu; Exit quits.
-7a. **Chime:** Settings → *Test chime* plays in the headphones (not the laptop speakers); with *chime on put-on*
-   enabled, putting the headphones on plays it a few seconds later.
-8. **Low battery:** only testable when the battery reaches the threshold (default 20 %); expect one toast.
-9. **Start with Windows:** enable in Settings, sign out and in → Orbit starts in the tray.
+1. **Status:** Max out of the case, near the PC → battery and *On head / Off head* update within a few seconds.
+2. **Auto-pause:** play music (also in a background Chrome tab), take the Max off → pauses within ~1–2 s; put it on
+   → the same player resumes. Pause manually, take off, put on → must *not* resume.
+3. **Exact battery:** compare Orbit's number with the Mac's Bluetooth menu, press **It matches my Mac**.
+4. **Charging:** plug in USB-C with the Max awake → Charging "Yes"; unplug → "No" within about 30 s.
+5. **USB-C:** connect the cable → "USB-C cable" chip and a notification; disconnect → notification.
+6. **Switching:** see [docs/multi-device.md](docs/multi-device.md); most important: hybrid release, then connect on the Mac.
+7. **"Connected elsewhere" (F11):** with the Max connected to the **Mac**, run a Debug capture for a minute.
+8. **Tray:** hover → tooltip; click → flyout; right-click → menu; Quit exits. Optional battery number as the icon.
+9. **Chime:** Settings → *Test chime* plays in the headphones.
+10. **Low battery / Start with Windows / hotkey / auto-connect:** when convenient.
 
 ## Project layout
 ```
-src/Orbit.Core      Parsing, model registry, capture/analysis, tracking, auto-pause, switching logic, settings (pure .NET, tested)
-src/Orbit.Platform  BLE scanner, paired devices, media sessions, KS/BluetoothSetServiceState connectors, hotkey, spatial sound
-src/Orbit           WinUI 3 app: Status, Settings, Debug Capture, tray + flyout
+src/Orbit.Core      Parsing, model registry, decryption, capture/analysis, tracking, auto-pause, switching logic, settings (pure .NET, tested)
+src/Orbit.Platform  BLE scanner, paired devices, USB audio watcher, media sessions, KS/BluetoothSetServiceState connectors, hotkey, spatial sound, key store
+src/Orbit           WinUI 3 app: Status, Settings, Debug, tray menu + flyout, tray battery icon
 tests/Orbit.Tests   xUnit tests incl. anonymised capture fixtures
-tools/Orbit.Cli     orbit-cli developer tool;  tools/make-icon.ps1 regenerates the icon
-docs/               sources, protocol findings, multi-device, noise control
+tools/Orbit.Cli     orbit-cli developer tool;  tools/make-icon.ps1 regenerates the app icon
+docs/               sources, protocol findings, multi-device, noise control, exact battery
 ```
 
-Raw captures in `captures/` are git-ignored because they contain the addresses of nearby devices. Test
-fixtures are anonymised (address replaced, encrypted tail zeroed).
+Raw captures in `captures/` are git-ignored because they contain the addresses of nearby devices. Test fixtures
+are anonymised (addresses replaced, encrypted tails zeroed, address bytes in decrypted data replaced).
 
 ## License
 MIT, see [LICENSE](LICENSE).

@@ -48,17 +48,28 @@ public class AutoPauseControllerTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
+    private sealed class FakeSession(string appId, string name, List<string> calls) : IMediaSession
+    {
+        public string AppId => appId;
+        public bool IsPlaying { get; set; }
+        public bool IsAlive { get; set; } = true;
+
+        public Task<bool> PauseAsync() { calls.Add("pause " + name); IsPlaying = false; return Task.FromResult(true); }
+
+        public Task<bool> PlayAsync() { calls.Add("play " + name); IsPlaying = true; return Task.FromResult(true); }
+    }
+
     private sealed class FakeMedia : IMediaController
     {
-        public string Session { get; set; } = "Spotify";
-        public bool Playing { get; set; }
+        public FakeMedia() => Sessions.Add(new FakeSession("Spotify", "Spotify", Calls));
+
         public List<string> Calls { get; } = [];
+        public List<FakeSession> Sessions { get; } = [];
 
-        public Task<MediaState?> GetCurrentAsync() => Task.FromResult<MediaState?>(new MediaState(Session, Playing));
+        /// <summary>Playing state of the first session (the simple single-player case).</summary>
+        public bool Playing { get => Sessions[0].IsPlaying; set => Sessions[0].IsPlaying = value; }
 
-        public Task<bool> PauseAsync(string id) { Calls.Add("pause " + id); Playing = false; return Task.FromResult(true); }
-
-        public Task<bool> PlayAsync(string id) { Calls.Add("play " + id); Playing = true; return Task.FromResult(true); }
+        public Task<IReadOnlyList<IMediaSession>> GetSessionsAsync() => Task.FromResult<IReadOnlyList<IMediaSession>>(Sessions);
     }
 
     private static Reading<bool> Worn(bool v, Confidence c = Confidence.VerifiedOnDevice) => new(v, c, "test");
@@ -111,6 +122,38 @@ public class AutoPauseControllerTests
         media.Playing = true; // user pressed play while headphones were off
         Assert.Equal(AutoPauseAction.None, await Feed(c, true, 20));
         Assert.Equal(["pause Spotify"], media.Calls);
+    }
+
+    [Fact]
+    public async Task ResumesExactlyTheBackgroundTabItPaused()
+    {
+        // Owner's report: music in a background Chrome tab paused but never resumed. Two tabs share the app ID
+        // "Chrome"; the first (idle) tab is what an app-ID lookup would have found.
+        var media = new FakeMedia();
+        media.Sessions.Clear();
+        var idleTab = new FakeSession("Chrome", "tab-1", media.Calls);
+        var musicTab = new FakeSession("Chrome", "tab-2", media.Calls) { IsPlaying = true };
+        media.Sessions.AddRange([idleTab, musicTab]);
+
+        var c = new AutoPauseController(media);
+        await Feed(c, true, 0);
+        Assert.Equal(AutoPauseAction.Paused, await Feed(c, false, 10));
+        Assert.Equal(AutoPauseAction.Resumed, await Feed(c, true, 20));
+
+        Assert.Equal(["pause tab-2", "play tab-2"], media.Calls);
+        Assert.True(musicTab.IsPlaying);
+        Assert.False(idleTab.IsPlaying);
+    }
+
+    [Fact]
+    public async Task DoesNotResumeAClosedSession()
+    {
+        var media = new FakeMedia { Playing = true };
+        var c = new AutoPauseController(media);
+        await Feed(c, true, 0);
+        await Feed(c, false, 10);
+        media.Sessions[0].IsAlive = false; // player closed while the headphones were off
+        Assert.Equal(AutoPauseAction.None, await Feed(c, true, 20));
     }
 
     [Fact]

@@ -61,7 +61,7 @@ Consequences in Orbit:
   AES-128 one block over `d[11..26]`. Two earlier pasted values (other fields) decrypted to random bytes and were
   rejected by the consistency check.
 - Plaintext from two consecutive broadcasts:
-  `04 41 00 00 xx xx xx 00 00 00 00 01 3A E4 C9 39` and `04 41 00 00 xx xx xx 00 00 00 00 02 ED CF 7E 3F`.
+  `04 41 00 00 xx xx xx 00 00 00 00 01 …` and `04 41 00 00 xx xx xx 00 00 00 00 02 …` (bytes 4-6 redacted, see F11).
   Bytes 0-10 constant, byte 11 a counter, bytes 12-15 varying — impossible with a wrong key.
 - **Byte 1 = `0x41` = 65 %, charging bit clear**, inside the coarse band (nibble 6 → 60-69 %); the Mac had shown
   65 % in the F6 session. Bytes 2 and 3 are `00` (LibrePods expects `7F` for absent components; the decoder takes
@@ -72,13 +72,31 @@ Consequences in Orbit:
 ## F8. Noise mode is not in the broadcast, encrypted or not (2026-10-14 01:49, decrypted capture)
 - Max on head, connected; tags anc-on (100 frames) → transparency (30 frames) → anc-on (18 frames), each frame
   decrypted with the confirmed key (Debug capture, `plain=` column).
-- Decrypted bytes 0-10 were identical across ANC and Transparency (`05 3F 00 00 xx xx xx 00 00 00 00`); only the
+- Decrypted bytes 0-10 were identical across ANC and Transparency (`05 3F 00 00 xx xx xx 00 00 00 00`, bytes 4-6 redacted); only the
   counter (byte 11) and bytes 12-15 changed. Together with F4 (unencrypted bytes unchanged): **the current
   listening mode cannot be read from BLE advertisements.** It is only available over AACP (L2CAP PSM 0x1001),
   as LibrePods does it (docs/noise-control.md).
 - Battery byte `0x3F` = 63 %, matching the value shown at the time.
 - OBSERVED: decrypted byte 0 alternated `04`/`05` exactly with unencrypted `d[10]` low nibble (`C4`/`C5`);
   LibrePods names d[10] a connection state (`04` idle, `05` music). Not verified; not used.
+
+## F9. No Bluetooth broadcasts while on the USB-C cable — OBSERVED (2026-10-14)
+- With the Max connected to the PC by USB-C (Windows: Apple USB device, vendor `05AC`, "AirPods Max USB Audio"),
+  Orbit heard no Proximity Pairing broadcasts ("not heard since …"), and "Switch to this PC" over Bluetooth failed.
+  Consistent with F5 (USB charging from the PC: zero broadcasts).
+- Consequence: on the cable, on-head and charging cannot be read; Orbit shows a "USB-C cable" state, dims last-known
+  values, and disables Bluetooth switching.
+
+## F10. The Max exposes no Apple RFCOMM service — VERIFIED (2026-10-14)
+- Uncached SDP query from Windows (`orbit-cli rfcomm`): exactly one RFCOMM service, `0x111E` (Hands-Free).
+- So Apple's accessory protocol is not reachable through WinRT RFCOMM; it is on L2CAP PSM 0x1001 [S2].
+
+## F11. Decrypted bytes 4-6 = the connected host's address — HYPOTHESIS, needs one capture
+- In every decrypted broadcast so far (Max connected to this PC), plaintext bytes 4-6 equal the last three bytes of
+  this PC's Bluetooth adapter address (seen in Windows' RFCOMM connection string; values deliberately not recorded).
+- If a capture while the Max is connected to the Mac shows the Mac's address bytes there instead, this is the
+  "connected to which device" signal F4 could not find in the readable bytes, and Orbit can show "in use by
+  another device" and skip doomed switch attempts. Until then it is unused.
 
 ## F6. Charging session (2026-10-13 23:43, 60 s, Max plugged in by USB-C and awake) — fixture `charging-session-max-usbc.csv`
 - **Battery — VERIFIED (2nd reading):** `d[6] = 06` all session; the Mac showed **65 %** → "60–69%". With F4

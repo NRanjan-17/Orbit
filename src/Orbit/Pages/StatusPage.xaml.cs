@@ -76,11 +76,18 @@ public sealed partial class StatusPage : Page
             return;
         }
 
-        ConnectionText.Text = !sw.IsAvailable ? "Choose your device below." : sw.IsConnected ? "Connected to this PC" : "Not connected to this PC";
-        SwitchButton.IsEnabled = sw.IsAvailable && !sw.IsBusy && !sw.IsConnected;
-        ReleaseButton.IsEnabled = sw.IsAvailable && !sw.IsBusy && sw.IsConnected;
+        var bt = !sw.IsAvailable ? "Choose your device below." : sw.IsConnected ? "Connected to this PC" : "Not connected to this PC";
+        ConnectionText.Text = _service?.UsbConnected == true ? "Connected by USB-C cable" + (sw.IsConnected ? " and Bluetooth" : "") : bt;
+        var usb = _service?.UsbConnected == true;
+        UsbChip.Visibility = usb ? Visibility.Visible : Visibility.Collapsed;
+
+        // On the cable, Bluetooth switching failed in testing (the headphones aren't on Bluetooth), so it's disabled.
+        SwitchButton.IsEnabled = !usb && sw.IsAvailable && !sw.IsBusy && !sw.IsConnected;
+        ReleaseButton.IsEnabled = !usb && sw.IsAvailable && !sw.IsBusy && sw.IsConnected;
         SwitchProgress.Visibility = sw.IsBusy ? Visibility.Visible : Visibility.Collapsed;
-        SwitchResultText.Text = sw.IsBusy ? "Working..." : sw.LastResult?.Message ?? "";
+        SwitchResultText.Text = usb
+            ? "Bluetooth switching is off while the USB-C cable is connected."
+            : sw.IsBusy ? "Working..." : sw.LastResult?.Message ?? "";
     }
 
     private void RenderKey()
@@ -158,9 +165,19 @@ public sealed partial class StatusPage : Page
             : s.PairedAppleDevices.Count == 0 ? "No paired Apple headphones found. Pair them in Windows Settings > Bluetooth." : "Choose your device below.";
 
         var shown = s.Current ?? s.LastKnown;
+
+        // Stale (last-known) values are dimmed so they don't read as live.
+        var stale = s.Current is null;
+        WornText.Opacity = ChargingText.Opacity = stale ? 0.45 : 1.0;
+
         if (s.Current is not null)
         {
             Presence.Text = "Nearby and advertising.";
+        }
+        else if (s.UsbConnected)
+        {
+            // Observed on the owner's Max (protocol-findings F9): no Bluetooth broadcasts while on the cable.
+            Presence.Text = "Connected by USB-C cable. While on the cable the headphones stop broadcasting over Bluetooth, so on-head and charging can't be read; values shown are from the last broadcast.";
         }
         else if (s.LastKnown is { } last)
         {

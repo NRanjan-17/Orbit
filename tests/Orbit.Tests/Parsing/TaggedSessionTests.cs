@@ -55,16 +55,18 @@ public class TaggedSessionTests
         }
     }
 
-    private sealed class PlayingMedia : Orbit.Core.Media.IMediaController
+    private sealed class PlayingMedia : Orbit.Core.Media.IMediaController, Orbit.Core.Media.IMediaSession
     {
-        public bool Playing { get; set; } = true;
+        public string AppId => "player";
+        public bool IsPlaying { get; private set; } = true;
+        public bool IsAlive => true;
 
-        public Task<Orbit.Core.Media.MediaState?> GetCurrentAsync() =>
-            Task.FromResult<Orbit.Core.Media.MediaState?>(new("player", Playing));
+        public Task<IReadOnlyList<Orbit.Core.Media.IMediaSession>> GetSessionsAsync() =>
+            Task.FromResult<IReadOnlyList<Orbit.Core.Media.IMediaSession>>([this]);
 
-        public Task<bool> PauseAsync(string id) { Playing = false; return Task.FromResult(true); }
+        public Task<bool> PauseAsync() { IsPlaying = false; return Task.FromResult(true); }
 
-        public Task<bool> PlayAsync(string id) { Playing = true; return Task.FromResult(true); }
+        public Task<bool> PlayAsync() { IsPlaying = true; return Task.FromResult(true); }
     }
 
     [Fact]

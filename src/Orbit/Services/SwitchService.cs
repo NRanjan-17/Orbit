@@ -180,7 +180,7 @@ public sealed class SwitchService : IDisposable
         bool playing;
         try
         {
-            playing = (await _media.GetCurrentAsync())?.IsPlaying == true;
+            playing = (await _media.GetSessionsAsync()).Any(s => s.IsPlaying);
         }
         catch (Exception)
         {

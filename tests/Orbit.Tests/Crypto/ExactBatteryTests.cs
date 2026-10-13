@@ -138,7 +138,8 @@ public class ExactBatteryTests
 
     [Theory]
     // Real decrypted blocks from the owner's AirPods Max (USB-C), 2026-10-14 (protocol-findings F7). Plaintext
-    // only: it carries the battery and a counter, not the key. Bytes 0-10 constant, byte 11 counts, 12-15 vary.
+    // only, and bytes 4-6 (part of the connected host's Bluetooth address, F11) replaced with AA. Bytes 0-10 constant,
+    // byte 11 counts, 12-15 vary.
     [InlineData("04410000AAAAAA00000000013AE4C939")]
     [InlineData("04410000AAAAAA0000000002EDCF7E3F")]
     public void RealMaxPlaintextDecodesTo65Percent(string plainHex)

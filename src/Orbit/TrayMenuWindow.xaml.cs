@@ -93,6 +93,11 @@ public sealed partial class TrayMenuWindow : Window
                 parts.Add("asleep");
             }
 
+            if (s.UsbConnected)
+            {
+                parts.Add("USB");
+            }
+
             StatusText.Text = string.Join(" · ", parts);
         }
 

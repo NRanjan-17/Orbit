@@ -41,6 +41,9 @@ public sealed class OrbitSettings
 
     public bool LowBatteryToast { get; set; } = true;
 
+    /// <summary>Notify when the headphones connect to this PC (USB-C cable or Bluetooth audio).</summary>
+    public bool ConnectToast { get; set; } = true;
+
     /// <summary>Warn when the advertised battery drops to or below this percent.</summary>
     public int LowBatteryPercent { get; set; } = 20;
 
