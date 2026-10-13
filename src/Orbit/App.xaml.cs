@@ -231,15 +231,18 @@ public partial class App : Application
 
         var value = percent!.Value;
         var color = value <= _service.Settings.LowBatteryPercent
-            ? Windows.UI.Color.FromArgb(255, 255, 140, 0)            // orange when low
-            : light ? Microsoft.UI.Colors.Black : Microsoft.UI.Colors.White;
-        _tray!.IconSource = new GeneratedIconSource
+            ? System.Drawing.Color.FromArgb(255, 255, 140, 0)            // orange when low
+            : light ? System.Drawing.Color.Black : System.Drawing.Color.White;
+        try
         {
-            Text = value >= 100 ? "100" : value.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(color),
-            FontSize = value >= 100 ? 26 : 36,
-            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-        };
+            var file = TrayIconRenderer.Render(value.ToString(System.Globalization.CultureInfo.InvariantCulture), color);
+            _tray!.IconSource = new BitmapImage(new Uri(file));
+        }
+        catch (Exception ex)
+        {
+            Log.Error("tray battery icon", ex);
+            _trayIconKey = null;
+        }
     }
 
     /// <summary>Taskbar theme (HKCU ...\Themes\Personalize\SystemUsesLightTheme); true = light taskbar.</summary>
