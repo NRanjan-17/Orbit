@@ -29,8 +29,9 @@ public sealed record ExactBattery(int Level, bool Charging);
 /// that is present; CAPod uses byte 1. No source has a checksum, so Orbit validates instead:
 /// every component must be ≤ 100 or 0x7F, at least one present, and the level must fall inside the
 /// verified coarse range from the unencrypted nibble (e.g. coarse 30 → 28..41). The key is confirmed after
-/// <see cref="ConfirmAfter"/> consistent frames and rejected after <see cref="RejectAfter"/> frames without
-/// one. Both byte orders of the entered key are tried, since sources disagree on whether keys are reversed.
+/// <see cref="ConfirmAfter"/> DIFFERENT encrypted tails in a row decode to levels within ±2 of each other
+/// (a wrong key yields unrelated values for each new ciphertext), and rejected after <see cref="RejectAfter"/>
+/// distinct tails without that. Both byte orders of the entered key are tried.
 /// </summary>
 public sealed class ExactBatteryResolver
 {
@@ -38,14 +39,15 @@ public sealed class ExactBatteryResolver
     public const int RejectAfter = 12;
 
     private readonly byte[][] _candidates;
-    private readonly int[] _good;
+    private readonly List<int>[] _levels;
+    private readonly HashSet<string> _seenTails = [];
     private int _frames;
     private int _chosen = -1;
 
     public ExactBatteryResolver(byte[]? key)
     {
         _candidates = key is { Length: 16 } ? [key, key.Reverse().ToArray()] : [];
-        _good = new int[_candidates.Length];
+        _levels = _candidates.Select(_ => new List<int>()).ToArray();
         State = _candidates.Length == 0 ? KeyState.None : KeyState.Checking;
     }
 
@@ -53,6 +55,12 @@ public sealed class ExactBatteryResolver
 
     /// <summary>True when the confirmed key was the reversed byte order of what the user entered.</summary>
     public bool UsedReversedKey => _chosen == 1;
+
+    /// <summary>
+    /// Diagnostics while checking: plaintext bytes 1..3 decrypted with each key order for the last frame
+    /// (battery components only; never the key). Empty once confirmed.
+    /// </summary>
+    public string LastCheckDiagnostics { get; private set; } = "";
 
     /// <summary>
     /// Returns the exact battery for a headphone frame once the key is confirmed (otherwise null).
@@ -71,18 +79,46 @@ public sealed class ExactBatteryResolver
             return value;
         }
 
+        // The headphones repeat the same encrypted tail for several seconds; only a NEW tail is new evidence.
+        // (First version counted repeats and "confirmed" a key from one ciphertext seen three times.)
+        var tailHex = Convert.ToHexString(frame.EncryptedTail);
+        if (!_seenTails.Add(tailHex))
+        {
+            return null;
+        }
+
         _frames++;
+        LastCheckDiagnostics = string.Join("  ", _candidates.Select((k, i) =>
+        {
+            var p = ProximityKey.DecryptBlock(frame.EncryptedTail, k);
+            return $"{(i == 0 ? "as-entered" : "reversed")}: [1]={p[1]:X2} [2]={p[2]:X2} [3]={p[3]:X2}";
+        })) + $"  coarse={(coarse.HasValue ? coarse.Value : -1)}  distinct tails={_frames}";
+
         for (var i = 0; i < _candidates.Length; i++)
         {
-            if (Decode(ProximityKey.DecryptBlock(frame.EncryptedTail, _candidates[i]), coarse) is not null && ++_good[i] >= ConfirmAfter)
+            var decoded = Decode(ProximityKey.DecryptBlock(frame.EncryptedTail, _candidates[i]), coarse);
+            if (decoded is null)
+            {
+                _levels[i].Clear();
+                continue;
+            }
+
+            // A wrong key turns each new ciphertext into unrelated noise; the right key gives a steady level.
+            if (_levels[i].Count > 0 && Math.Abs(decoded.Level - _levels[i][^1]) > 2)
+            {
+                _levels[i].Clear();
+            }
+
+            _levels[i].Add(decoded.Level);
+            if (_levels[i].Count >= ConfirmAfter)
             {
                 _chosen = i;
                 State = KeyState.Confirmed;
-                return Decode(ProximityKey.DecryptBlock(frame.EncryptedTail, _candidates[i]), coarse);
+                return decoded;
             }
         }
 
-        if (_frames >= RejectAfter && _good.All(g => g == 0))
+        if (_frames >= RejectAfter)
         {
             State = KeyState.Rejected;
         }

@@ -16,47 +16,46 @@ public sealed partial class TrayMenuWindow : Window
     private const double WidthDip = 300;
     private bool _rendering;
 
+    private readonly PopupBehavior _popup;
+    private Windows.Graphics.PointInt32 _anchor;
+
     public TrayMenuWindow()
     {
         InitializeComponent();
-        if (AppWindow.Presenter is OverlappedPresenter p)
-        {
-            p.IsResizable = false;
-            p.IsMaximizable = false;
-            p.IsMinimizable = false;
-            p.IsAlwaysOnTop = true;
-            p.SetBorderAndTitleBar(true, false);
-        }
-
-        AppWindow.IsShownInSwitchers = false;
-        Activated += (_, e) =>
-        {
-            if (e.WindowActivationState == WindowActivationState.Deactivated)
-            {
-                AppWindow.Hide();
-            }
-        };
+        PopupBehavior.ConfigureChrome(this);
+        _popup = new PopupBehavior(this);
     }
 
     public void ShowAtCursor()
     {
-        Render();
+        if (_popup.IsVisible)
+        {
+            _popup.Hide();
+            return;
+        }
 
+        Render();
+        GetCursorPos(out var cursor);
+        _anchor = new Windows.Graphics.PointInt32(cursor.X, cursor.Y);
+        _popup.Show(Fit());
+
+        // The first measurement can happen before XAML has applied styles (wrong height); fit again once rendered.
+        DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () => AppWindow.MoveAndResize(Fit()));
+    }
+
+    /// <summary>Window bounds that fit the content, up-and-left of the anchor, inside the work area.</summary>
+    private Windows.Graphics.RectInt32 Fit()
+    {
         var root = (FrameworkElement)Content;
         root.Measure(new Windows.Foundation.Size(WidthDip, double.PositiveInfinity));
         var scale = root.XamlRoot?.RasterizationScale ?? GetScaleForCursor();
         var w = (int)Math.Ceiling(WidthDip * scale);
-        var h = (int)Math.Ceiling((root.DesiredSize.Height + 2) * scale);
+        var h = (int)Math.Ceiling((root.DesiredSize.Height + 4) * scale);
 
-        GetCursorPos(out var cursor);
-        var work = DisplayArea.GetFromPoint(new Windows.Graphics.PointInt32(cursor.X, cursor.Y), DisplayAreaFallback.Primary).WorkArea;
-
-        // Open up-and-left of the cursor (the tray is usually bottom-right), kept inside the work area.
-        var x = Math.Clamp(cursor.X - w, work.X, work.X + work.Width - w);
-        var y = Math.Clamp(cursor.Y - h, work.Y, work.Y + work.Height - h);
-        AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(x, y, w, h));
-        AppWindow.Show();
-        Activate();
+        var work = DisplayArea.GetFromPoint(_anchor, DisplayAreaFallback.Primary).WorkArea;
+        var x = Math.Clamp(_anchor.X - w, work.X, work.X + work.Width - w);
+        var y = Math.Clamp(_anchor.Y - h, work.Y, work.Y + work.Height - h);
+        return new Windows.Graphics.RectInt32(x, y, w, h);
     }
 
     private void Render()
@@ -111,13 +110,13 @@ public sealed partial class TrayMenuWindow : Window
 
     private void OnSwitch(object sender, RoutedEventArgs e)
     {
-        AppWindow.Hide();
+        _popup.Hide();
         _ = App.Switch?.SwitchToThisPcAsync();
     }
 
     private void OnRelease(object sender, RoutedEventArgs e)
     {
-        AppWindow.Hide();
+        _popup.Hide();
         _ = App.Switch?.ReleaseAsync();
     }
 
@@ -156,13 +155,13 @@ public sealed partial class TrayMenuWindow : Window
 
     private void OnOpen(object sender, RoutedEventArgs e)
     {
-        AppWindow.Hide();
+        _popup.Hide();
         (Application.Current as App)?.ShowMainWindow();
     }
 
     private void OnSettings(object sender, RoutedEventArgs e)
     {
-        AppWindow.Hide();
+        _popup.Hide();
         (Application.Current as App)?.ShowMainWindow("settings");
     }
 

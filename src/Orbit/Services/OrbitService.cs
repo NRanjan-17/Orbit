@@ -162,6 +162,30 @@ public sealed class OrbitService : IDisposable
         return true;
     }
 
+    private Core.Crypto.KeyState _loggedKeyState;
+    private int _loggedChecks;
+
+    /// <summary>Writes key-check progress to orbit.log: each state change, and the first few check frames.</summary>
+    private void LogKeyProgress()
+    {
+        if (_tracker.Exact is not { } exact)
+        {
+            return;
+        }
+
+        if (exact.State == Core.Crypto.KeyState.Checking && _loggedChecks < 15 && exact.LastCheckDiagnostics.Length > 0)
+        {
+            _loggedChecks++;
+            Log.Write($"exact battery check: {exact.LastCheckDiagnostics}");
+        }
+
+        if (exact.State != _loggedKeyState)
+        {
+            _loggedKeyState = exact.State;
+            Log.Write($"exact battery key state: {exact.State}{(exact.UsedReversedKey ? " (reversed byte order)" : "")}");
+        }
+    }
+
     public void RemoveKey()
     {
         _keyStore.Delete();
@@ -205,6 +229,7 @@ public sealed class OrbitService : IDisposable
         }
 
         LastKnown = _tracker.Current;
+        LogKeyProgress();
         Changed?.Invoke(this, EventArgs.Empty);
 
         if (Settings.LowBatteryToast && _lowBattery.Check(status.LowestBattery, status.Charging) is { } pct)
@@ -236,7 +261,23 @@ public sealed class OrbitService : IDisposable
     /// <summary>Raised when the debounced, verified on-head state changes (true = put on).</summary>
     public event EventHandler<bool>? WornChanged;
 
-    public string DisplayName => BoundDevice?.Name ?? LastKnown?.Status.ModelName ?? "No device";
+    /// <summary>
+    /// Device name for display. Windows shows Apple devices registered with Find My as "Name - Find My";
+    /// that suffix (and the double space before it) is dropped here.
+    /// </summary>
+    public string DisplayName => CleanName(BoundDevice?.Name) ?? LastKnown?.Status.ModelName ?? "No device";
+
+    private static string? CleanName(string? name)
+    {
+        if (name is null)
+        {
+            return null;
+        }
+
+        const string suffix = "- Find My";
+        var trimmed = name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? name[..^suffix.Length] : name;
+        return string.Join(' ', trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
 
     public void Dispose()
     {

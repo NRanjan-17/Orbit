@@ -24,9 +24,12 @@ public class ExactBatteryTests
     }
 
     /// <summary>Builds a Max frame: coarse nibble <paramref name="coarse"/>, encrypted tail from <paramref name="level"/>.</summary>
+    private static int _nonce;
+
     private static byte[] Frame(int coarse, int level, bool charging, byte[] key)
     {
         var plain = new byte[16];
+        plain[4] = (byte)Interlocked.Increment(ref _nonce); // real tails change every few seconds; so do ours
         plain[1] = (byte)(level | (charging ? 0x80 : 0));
         plain[2] = 0x7F; // not present
         plain[3] = 0x7F;
@@ -66,6 +69,20 @@ public class ExactBatteryTests
         Assert.Equal(64, last!.ExactBattery.Value);
         Assert.Equal(Confidence.Corroborated, last.ExactBattery.Confidence);
         Assert.Equal(60, last.Battery.Value); // coarse reading unchanged
+    }
+
+    [Fact]
+    public void RepeatedCiphertextIsNotNewEvidence()
+    {
+        // The bug seen on the real device: one ciphertext repeated must never confirm a key.
+        var frame = Frame(6, 64, false, Key);
+        var tracker = new DeviceTracker(Bound) { Exact = new ExactBatteryResolver(Key) };
+        for (var i = 0; i < 10; i++)
+        {
+            tracker.Add(frame, -40, T0.AddSeconds(i));
+        }
+
+        Assert.Equal(KeyState.Checking, tracker.Exact!.State);
     }
 
     [Fact]

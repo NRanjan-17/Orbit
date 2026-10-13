@@ -79,7 +79,7 @@ public sealed partial class StatusPage : Page
         ConnectionText.Text = !sw.IsAvailable ? "Choose your device below." : sw.IsConnected ? "Connected to this PC" : "Not connected to this PC";
         SwitchButton.IsEnabled = sw.IsAvailable && !sw.IsBusy && !sw.IsConnected;
         ReleaseButton.IsEnabled = sw.IsAvailable && !sw.IsBusy && sw.IsConnected;
-        SwitchProgress.IsActive = sw.IsBusy;
+        SwitchProgress.Visibility = sw.IsBusy ? Visibility.Visible : Visibility.Collapsed;
         SwitchResultText.Text = sw.IsBusy ? "Working..." : sw.LastResult?.Message ?? "";
     }
 
@@ -152,8 +152,11 @@ public sealed partial class StatusPage : Page
 
         if (shown is null)
         {
-            BatteryText.Text = ChargingText.Text = WornText.Text = "Unknown";
-            SignalText.Text = "-";
+            BatteryText.Text = "-";
+            BatteryRing.Value = 0;
+            WornText.Text = "Worn: unknown";
+            ChargingText.Text = "Charging: unknown";
+            SignalText.Text = "No signal";
         }
         else
         {
@@ -161,9 +164,17 @@ public sealed partial class StatusPage : Page
             BatteryText.Text = st.Form == Core.Parsing.DeviceForm.Earbuds
                 ? $"L {Display.Battery(st.LeftBattery, show)} · R {Display.Battery(st.RightBattery, show)} · Case {Display.Battery(st.CaseBattery, show)}"
                 : Display.BatteryOf(st, show);
-            ChargingText.Text = Display.Flag(st.Form == Core.Parsing.DeviceForm.Earbuds ? st.CaseCharging : st.Charging, show, "Yes", "No");
-            WornText.Text = Display.Flag(st.AnyWorn, show, "On head", "Off head");
-            SignalText.Text = s.Current is null ? "-" : Display.Signal(shown);
+
+            // Ring: exact value when available, otherwise the middle of the advertised 10 % range.
+            var ring = st.ExactBattery.HasValue ? st.ExactBattery.Value
+                : st.LowestBattery.HasValue ? Math.Min(100, st.LowestBattery.Value + 5) : 0;
+            BatteryRing.Value = ring;
+
+            var charging = Display.Flag(st.Form == Core.Parsing.DeviceForm.Earbuds ? st.CaseCharging : st.Charging, show, "Charging", "Not charging");
+            ChargingText.Text = charging == "Unknown" ? "Charging: unknown" : charging;
+            var worn = Display.Flag(st.AnyWorn, show, "On head", "Off head");
+            WornText.Text = worn == "Unknown" ? "Worn: unknown" : worn;
+            SignalText.Text = s.Current is null ? "Asleep" : $"Signal {Display.Signal(shown)}";
         }
 
         AutoPauseText.Text = !s.Settings.AutoPause

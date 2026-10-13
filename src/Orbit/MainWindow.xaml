@@ -13,6 +13,8 @@
         IsBackButtonVisible="Collapsed"
         IsSettingsVisible="False"
         PaneDisplayMode="Left"
+        OpenPaneLength="200"
+        IsPaneToggleButtonVisible="True"
         SelectionChanged="OnNavSelectionChanged">
         <NavigationView.MenuItems>
             <NavigationViewItem Content="Status" Tag="status">

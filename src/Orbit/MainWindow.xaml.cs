@@ -9,7 +9,12 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 780));
+        // AppWindow sizes are physical pixels; scale the 1180x860 design size by the display's DPI.
+        var scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
+        var work = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(AppWindow.Id, Microsoft.UI.Windowing.DisplayAreaFallback.Primary).WorkArea;
+        var w = Math.Min((int)(1180 * scale), work.Width - 40);
+        var h = Math.Min((int)(860 * scale), work.Height - 40);
+        AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(work.X + (work.Width - w) / 2, work.Y + (work.Height - h) / 2, w, h));
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Orbit.ico"));
 
         // Closing the window keeps Orbit running in the tray; Exit is in the tray menu.
@@ -30,6 +35,9 @@ public sealed partial class MainWindow : Window
 
         Nav.SelectedItem = Nav.MenuItems[0];
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hwnd);
 
     /// <summary>Selects the nav item with the given tag ("status", "settings", "capture").</summary>
     public void NavigateTo(string tag)

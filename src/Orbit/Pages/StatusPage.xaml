@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="Orbit.Pages.StatusPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -10,129 +10,177 @@
             <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Padding" Value="20" />
+            <Setter Property="Padding" Value="24" />
         </Style>
-        <Style x:Key="Label" TargetType="TextBlock">
+        <Style x:Key="Chip" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="10,4" />
+        </Style>
+        <Style x:Key="Secondary" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="Section" TargetType="Expander">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         </Style>
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel Padding="24" Spacing="16" MaxWidth="760" HorizontalAlignment="Left">
-            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Status" />
+        <StackPanel Padding="32,24" Spacing="12" MaxWidth="920">
 
             <InfoBar x:Name="ScannerInfo" Severity="Error" IsClosable="False" />
 
-            <!-- Device -->
+            <!-- Hero: battery + state on the left, connection on the right -->
             <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="12">
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <FontIcon Glyph="&#xE7F6;" FontSize="28" />
-                        <StackPanel>
-                            <TextBlock x:Name="DeviceName" Style="{StaticResource SubtitleTextBlockStyle}" Text="No device" />
-                            <TextBlock x:Name="DeviceModel" Style="{StaticResource Label}" />
-                        </StackPanel>
-                    </StackPanel>
+                <Grid ColumnSpacing="32" RowSpacing="20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <TextBlock x:Name="Presence" TextWrapping="Wrap" />
-
-                    <Grid ColumnSpacing="24" RowSpacing="8">
+                    <Grid ColumnSpacing="24">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition /><RowDefinition />
-                        </Grid.RowDefinitions>
-                        <TextBlock Style="{StaticResource Label}" Text="Battery" />
-                        <TextBlock x:Name="BatteryText" Grid.Column="1" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Unknown" />
-                        <TextBlock Grid.Row="1" Style="{StaticResource Label}" Text="Charging" />
-                        <TextBlock x:Name="ChargingText" Grid.Row="1" Grid.Column="1" Text="Unknown" />
-                        <TextBlock Grid.Row="2" Style="{StaticResource Label}" Text="Worn" />
-                        <TextBlock x:Name="WornText" Grid.Row="2" Grid.Column="1" Text="Unknown" />
-                        <TextBlock Grid.Row="3" Style="{StaticResource Label}" Text="Signal" />
-                        <TextBlock x:Name="SignalText" Grid.Row="3" Grid.Column="1" Text="-" />
-                        <TextBlock Grid.Row="4" Style="{StaticResource Label}" Text="Auto-pause" />
-                        <TextBlock x:Name="AutoPauseText" Grid.Row="4" Grid.Column="1" TextWrapping="Wrap" Text="-" />
+
+                        <Grid Width="120" Height="120" VerticalAlignment="Center">
+                            <ProgressRing x:Name="BatteryRing" IsIndeterminate="False" Width="120" Height="120" Value="0"
+                                          Background="{ThemeResource SubtleFillColorSecondaryBrush}" />
+                            <FontIcon Glyph="&#xE7F6;" FontSize="40" />
+                        </Grid>
+
+                        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock x:Name="DeviceName" Style="{StaticResource SubtitleTextBlockStyle}" TextTrimming="CharacterEllipsis" Text="No device" />
+                            <TextBlock x:Name="BatteryText" Style="{StaticResource TitleLargeTextBlockStyle}" Text="-" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Style="{StaticResource Chip}"><TextBlock x:Name="WornText" Text="Unknown" /></Border>
+                                <Border Style="{StaticResource Chip}"><TextBlock x:Name="ChargingText" Text="Unknown" /></Border>
+                                <Border Style="{StaticResource Chip}"><TextBlock x:Name="SignalText" Text="-" /></Border>
+                            </StackPanel>
+                            <TextBlock x:Name="Presence" Style="{StaticResource Secondary}" />
+                        </StackPanel>
                     </Grid>
 
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"
-                               Text="Battery is advertised in 10% steps, so it is shown as a range. Values marked (unverified) come from community documentation and have not been confirmed on this model." />
-                </StackPanel>
-            </Border>
-
-            <!-- Exact battery -->
-            <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Exact battery (optional)" />
-                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
-                               Text="The headphones also broadcast their exact battery level, encrypted with a key your Mac keeps in its keychain. Copy the MagicAccEncKey value from the Mac once (steps in docs/exact-battery.md) and paste it here, or paste the whole keychain entry. The key is stored encrypted for your Windows account only." />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <PasswordBox x:Name="KeyBox" Width="360" PlaceholderText="3A-9C-81-57-... or the whole plist" />
-                        <Button Content="Save key" Click="OnSaveKey" />
-                        <Button x:Name="RemoveKeyButton" Content="Remove" Click="OnRemoveKey" />
+                    <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center" MinWidth="220">
+                        <TextBlock x:Name="ConnectionText" Style="{StaticResource BodyStrongTextBlockStyle}" Text="-" />
+                        <Button x:Name="SwitchButton" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Click="OnSwitchClick">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8AB;" FontSize="14" />
+                                <TextBlock Text="Switch to this PC" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ReleaseButton" HorizontalAlignment="Stretch" Click="OnReleaseClick">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE8F0;" FontSize="14" />
+                                <TextBlock Text="Release to other device" />
+                            </StackPanel>
+                        </Button>
+                        <ProgressBar x:Name="SwitchProgress" IsIndeterminate="True" Visibility="Collapsed" />
+                        <TextBlock x:Name="SwitchResultText" Style="{StaticResource Secondary}" MaxWidth="240" />
                     </StackPanel>
-                    <TextBlock x:Name="KeyStatus" TextWrapping="Wrap" />
-                </StackPanel>
+                </Grid>
             </Border>
 
-            <!-- Connection / switching -->
-            <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Connection" />
-                    <TextBlock x:Name="ConnectionText" Text="-" />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button x:Name="SwitchButton" Style="{StaticResource AccentButtonStyle}" Content="Switch to this PC" Click="OnSwitchClick" />
-                        <Button x:Name="ReleaseButton" Content="Release to other device" Click="OnReleaseClick" />
-                        <ProgressRing x:Name="SwitchProgress" IsActive="False" Width="20" Height="20" />
+            <!-- Auto-pause summary -->
+            <Border Style="{StaticResource Card}" Padding="20,14">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon Glyph="&#xE769;" FontSize="18" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="Auto-pause" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock x:Name="AutoPauseText" Style="{StaticResource Secondary}" />
                     </StackPanel>
-                    <TextBlock x:Name="SwitchResultText" TextWrapping="Wrap" />
-                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"
-                               Text="Apple's automatic switching between your Apple devices uses iCloud and is not available on Windows. Windows may not be able to take the headphones while your Mac is using them; release them on the Mac first if switching fails." />
-                </StackPanel>
+                </Grid>
             </Border>
 
-            <!-- Binding -->
-            <Border Style="{StaticResource Card}">
+            <!-- Secondary sections -->
+            <Expander Style="{StaticResource Section}">
+                <Expander.Header>
+                    <Grid Padding="0,10" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <FontIcon Glyph="&#xE702;" FontSize="18" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Your device" />
+                            <TextBlock x:Name="DeviceModel" Style="{StaticResource Secondary}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                </Expander.Header>
                 <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Your device" />
-                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
-                               Text="Orbit recognises your headphones by the Device ID Windows reports for the paired device. Only advertisements from that model are shown. The choice is stored on this PC only." />
+                    <TextBlock Style="{StaticResource Secondary}"
+                               Text="Orbit recognises your headphones from the Device ID Windows reports for them. Stored on this PC only." />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <ComboBox x:Name="DevicePicker" MinWidth="320" SelectionChanged="OnDevicePicked" />
                         <Button Content="Refresh" Click="OnRefreshDevices" />
                     </StackPanel>
                 </StackPanel>
-            </Border>
+            </Expander>
 
-            <!-- Spatial sound -->
-            <Border Style="{StaticResource Card}">
+            <Expander Style="{StaticResource Section}">
+                <Expander.Header>
+                    <Grid Padding="0,10" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <FontIcon Glyph="&#xEBA7;" FontSize="18" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Exact battery" />
+                            <TextBlock x:Name="KeyStatus" Style="{StaticResource Secondary}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                </Expander.Header>
                 <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Spatial sound (Windows)" />
-                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
-                               Text="Windows' own spatial sound for the headphones' output. Apple's head-tracked Spatial Audio is not available on Windows: it needs the Apple control channel (L2CAP), which Windows does not expose." />
+                    <TextBlock Style="{StaticResource Secondary}"
+                               Text="Paste the MagicAccEncKey from your Mac's keychain (or the whole entry) to see the exact percentage instead of 10% steps. Steps: docs/exact-battery.md. Stored encrypted for your Windows account." />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <PasswordBox x:Name="KeyBox" Width="360" PlaceholderText="3A-9C-81-57-... or the whole entry" />
+                        <Button Content="Save key" Style="{StaticResource AccentButtonStyle}" Click="OnSaveKey" />
+                        <Button x:Name="RemoveKeyButton" Content="Remove" Click="OnRemoveKey" />
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <Expander Style="{StaticResource Section}">
+                <Expander.Header>
+                    <Grid Padding="0,10" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <FontIcon Glyph="&#xE767;" FontSize="18" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Spatial sound" />
+                            <TextBlock x:Name="SpatialStatus" Style="{StaticResource Secondary}" FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                </Expander.Header>
+                <StackPanel Spacing="8">
+                    <TextBlock Style="{StaticResource Secondary}"
+                               Text="Windows' own spatial sound for the headphones' output. Apple's head-tracked Spatial Audio isn't available on Windows." />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <ComboBox x:Name="SpatialPicker" MinWidth="320" IsEnabled="False" SelectionChanged="OnSpatialPicked" />
                         <Button Content="Windows sound settings" Click="OnOpenSoundSettings" />
                     </StackPanel>
-                    <TextBlock x:Name="SpatialStatus" Style="{StaticResource Label}" TextWrapping="Wrap" />
                 </StackPanel>
-            </Border>
+            </Expander>
 
-            <!-- Noise control -->
-            <Border Style="{StaticResource Card}" Opacity="0.6">
-                <StackPanel Spacing="8">
-                    <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Noise control" />
-                    <RadioButtons IsEnabled="False" MaxColumns="3">
-                        <x:String>Off</x:String>
-                        <x:String>Noise Cancellation</x:String>
-                        <x:String>Transparency</x:String>
-                    </RadioButtons>
-                    <TextBlock Style="{StaticResource Label}" TextWrapping="Wrap"
-                               Text="Not available on Windows. Noise control uses Apple's accessory protocol over L2CAP, which Windows has no public API for, and the current mode is not readable from Bluetooth advertisements (verified in captures). Use the button on the headphones. See docs/noise-control.md." />
-                </StackPanel>
-            </Border>
+            <Expander Style="{StaticResource Section}">
+                <Expander.Header>
+                    <Grid Padding="0,10" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <FontIcon Glyph="&#xE8F4;" FontSize="18" />
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Noise control" />
+                            <TextBlock Style="{StaticResource Secondary}" FontSize="12" Text="Not available on Windows" />
+                        </StackPanel>
+                    </Grid>
+                </Expander.Header>
+                <TextBlock Style="{StaticResource Secondary}"
+                           Text="Off / Noise Cancellation / Transparency use Apple's accessory protocol over L2CAP, which Windows has no public API for, and the current mode isn't readable from Bluetooth broadcasts. Use the button on the headphones. Details: docs/noise-control.md." />
+            </Expander>
+
+            <TextBlock Style="{StaticResource Secondary}" FontSize="12" Margin="4,4,0,0"
+                       Text="Battery is broadcast in 10% steps and shown as a range unless an exact-battery key is set. Values marked (unverified) come from community documentation." />
         </StackPanel>
     </ScrollViewer>
 </Page>

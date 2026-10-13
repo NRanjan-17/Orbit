@@ -11,26 +11,13 @@ public sealed partial class FlyoutWindow : Window
     private const int WidthDip = 340;
     private const int HeightDip = 230;
 
+    private readonly PopupBehavior _popup;
+
     public FlyoutWindow()
     {
         InitializeComponent();
-        if (AppWindow.Presenter is OverlappedPresenter p)
-        {
-            p.IsResizable = false;
-            p.IsMaximizable = false;
-            p.IsMinimizable = false;
-            p.IsAlwaysOnTop = true;
-            p.SetBorderAndTitleBar(true, false);
-        }
-
-        AppWindow.IsShownInSwitchers = false;
-        Activated += (_, e) =>
-        {
-            if (e.WindowActivationState == WindowActivationState.Deactivated)
-            {
-                AppWindow.Hide();
-            }
-        };
+        PopupBehavior.ConfigureChrome(this);
+        _popup = new PopupBehavior(this);
 
         if (App.Service is { } s)
         {
@@ -40,15 +27,22 @@ public sealed partial class FlyoutWindow : Window
 
     public void ShowNearTray()
     {
+        if (_popup.IsVisible)
+        {
+            _popup.Hide(); // second click on the tray icon closes it
+            return;
+        }
+
         Render();
-        var scale = (Content as FrameworkElement)?.XamlRoot?.RasterizationScale ?? 1.0;
+        var scale = (Content as FrameworkElement)?.XamlRoot?.RasterizationScale ?? GetDpiForSystem() / 96.0;
         var w = (int)(WidthDip * scale);
         var h = (int)(HeightDip * scale);
         var work = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary).WorkArea;
-        AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(work.X + work.Width - w - 12, work.Y + work.Height - h - 12, w, h));
-        AppWindow.Show();
-        Activate();
+        _popup.Show(new Windows.Graphics.RectInt32(work.X + work.Width - w - 12, work.Y + work.Height - h - 12, w, h));
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern uint GetDpiForSystem();
 
     private void Render()
     {
@@ -80,7 +74,7 @@ public sealed partial class FlyoutWindow : Window
 
     private void OnOpenClick(object sender, RoutedEventArgs e)
     {
-        AppWindow.Hide();
+        _popup.Hide();
         (Application.Current as App)?.ShowMainWindow();
     }
 }
