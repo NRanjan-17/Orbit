@@ -23,7 +23,7 @@ No Windows SDK or Visual Studio is needed: the Windows App SDK (2.5) and the Win
 1. Pair your headphones in Windows Settings → Bluetooth.
 2. From the [Releases](../../releases) page download **`Orbit-<version>-win-x64-setup.exe`** (or `-win-arm64-setup.exe`)
    and run it: choose the install folder, per-user (no admin) or all users, optional desktop shortcut and
-   start-with-Windows. Uninstall from Settings → Apps (your settings in `%LOCALAPPDATA%\Orbit` are kept).
+   start-with-Windows. Uninstall from Settings → Apps; it removes Orbit completely, including your settings and exact-battery key.
 3. Portable alternative: download `Orbit-<version>-win-x64.zip`, extract anywhere, run `Orbit.exe`.
 
 The release is not code-signed: SmartScreen may warn on first run (**More info → Run anyway**), and Smart App

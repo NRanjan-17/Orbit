@@ -85,5 +85,7 @@ Root: HKCU; Subkey: "Software\Classes\AppUserModelId\Orbit.App"; ValueType: none
 [Run]
 Filename: "{app}\Orbit.exe"; Description: "{cm:LaunchProgram,Orbit}"; Flags: nowait postinstall skipifsilent
 
-; Settings, logs and the exact-battery key in %LOCALAPPDATA%\Orbit are kept on uninstall (reinstalling keeps
-; your setup). Delete that folder to remove them.
+[UninstallDelete]
+; Remove everything Orbit stored for the user: settings.json, the DPAPI-protected exact-battery key
+; (device-key.bin), orbit.log, the tray icon cache and any Debug captures saved under %LOCALAPPDATA%\Orbit.
+Type: filesandordirs; Name: "{localappdata}\Orbit"
