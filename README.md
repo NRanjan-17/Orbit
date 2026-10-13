@@ -63,16 +63,16 @@ readings drive auto-pause and low-battery alerts.
 | Device recognition: Windows Device ID product ↔ advertised model bytes | ✅ Verified |
 | On-head: `d[5]` = `2B` on / `01` off (exact values; `3F` in case → unknown) | ✅ Verified (tagged transitions) |
 | Battery: low nibble of `d[6]`, 10 % steps | ✅ Verified (Mac 37 % ↔ 3, 65 % ↔ 6) |
-| Exact battery % from the decrypted tail (key from your Mac) | ✅ Decrypts on the Max: byte 1 = battery (65 %, 63 %, inside the verified band). ⏳ Press **It matches my Mac** once after comparing |
+| Exact battery % from the decrypted tail (key from your Mac) | ✅ Verified: decrypts on the Max (byte 1 = battery) and the owner confirmed it matches the Mac |
 | Charging: `d[7] & 0x10`, held 30 s to bridge dropouts | ✅ Verified |
 | Auto-pause / resume with real playback | ✅ Verified by the owner; background-tab resume fixed 2026-10-14 (⏳ re-check) |
 | Switch to this PC (incl. while the Mac is playing) | ✅ Verified: 3–4 s |
 | Release to other device (hybrid: KS + service toggle) | ✅ Service-toggle release verified; ⏳ hybrid release → Mac connect to confirm |
-| USB-C cable detection | ✅ Detected (Apple USB audio device); while on the cable the Max does not broadcast, so on-head/charging are unavailable |
+| USB-C cable detection | ✅ Detected (Apple USB audio device); on the cable the Max broadcasts only now and then, so on-head/charging update intermittently |
 | Connection notifications (USB-C / Bluetooth) | ⏳ Built; not yet tried |
 | Status page, animated on-head indicator, tray menu, flyout, battery tray icon | ✅ Seen on screen; self-test opens them without errors |
 | Chime in the headphones (Orbit's own sound) | ✅ Verified by the owner; deeper "bass" version ⏳ needs a listen |
-| Windows spatial sound selector | ✅ Verified by the owner |
+| Windows spatial sound selector, including **Off** | ✅ Verified (owner; Off set and read back via the API) |
 | Dolby Atmos for Headphones | Not bundled (Dolby's paid Dolby Access app); appears in the spatial list once installed |
 | Start with Windows, low-battery toast, hotkey, auto-connect | ⏳ Built; not yet tried |
 | Noise mode in advertisements | ❌ Not broadcast at all, readable or encrypted (verified, F4/F8) |
@@ -86,8 +86,8 @@ readings drive auto-pause and low-battery alerts.
   recommended: [docs/noise-control.md](docs/noise-control.md).
 - **No automatic Apple-style switching.** That is iCloud-coordinated. Orbit offers manual switch/release, a hotkey
   and optional auto-connect: [docs/multi-device.md](docs/multi-device.md).
-- **The Max stops broadcasting when idle, in the Smart Case, or on the USB-C cable.** Orbit then shows the last
-  known values dimmed, with the time they were seen.
+- **The Max stops broadcasting when idle or in the Smart Case, and broadcasts only intermittently on the USB-C
+  cable.** Orbit then shows the last known values dimmed, with the time they were seen.
 - **Battery resolution is 10 %** from the readable broadcast; the exact % needs the key from your Mac.
 - **Media apps without a Windows media session** cannot be auto-paused.
 - **Smart App Control** can block the unsigned build: sign it with a trusted certificate, or turn Smart App Control
