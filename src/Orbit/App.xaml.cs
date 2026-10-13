@@ -118,28 +118,32 @@ public partial class App : Application
         }
 
         _flyout?.Close();
+        _trayMenu?.Close();
         _window?.Close();
         Exit();
     }
 
     private void CreateTray()
     {
-        _trayMenu = new TrayMenu(this);
         _tray = new TaskbarIcon
         {
             ToolTipText = "Orbit",
             IconSource = new BitmapImage(new Uri(Path.Combine(AppContext.BaseDirectory, "Assets", "Orbit.ico"))),
             NoLeftClickDelay = true,
             LeftClickCommand = new RelayCommand(ShowFlyout),
-            // SecondWindow renders the WinUI MenuFlyout (Fluent styling, icons, check marks) instead of a Win32 menu.
-            ContextMenuMode = ContextMenuMode.SecondWindow,
-            ContextFlyout = _trayMenu.Flyout,
+            // Right-click opens Orbit's own menu window (H.NotifyIcon's WinUI menu rendered clipped).
+            RightClickCommand = new RelayCommand(ShowTrayMenu),
         };
         _tray.ForceCreate(enablesEfficiencyMode: false);
-        _switch!.Changed += (_, _) => _trayMenu.Refresh();
     }
 
-    private TrayMenu? _trayMenu;
+    private TrayMenuWindow? _trayMenu;
+
+    private void ShowTrayMenu()
+    {
+        _trayMenu ??= new TrayMenuWindow();
+        _trayMenu.ShowAtCursor();
+    }
 
     private void ShowFlyout()
     {
@@ -154,7 +158,6 @@ public partial class App : Application
             _tray.ToolTipText = Display.Tooltip(_service.DisplayName, _service.Current, _service.LastKnown, _service.Settings.ShowUnverified);
         }
 
-        _trayMenu?.Refresh();
     }
 
     public async Task PlayChimeAsync()
