@@ -1,4 +1,4 @@
-﻿using Orbit.Core;
+using Orbit.Core;
 using Orbit.Core.Analysis;
 using Orbit.Core.Capture;
 using Orbit.Platform.Bluetooth;
@@ -33,6 +33,7 @@ internal static class Program
             {
                 "capture" => Capture(args.Skip(1).ToArray()),
                 "analyze" or "analyse" => Analyze(args.Skip(1).ToArray()),
+                "devices" => Devices(),
                 _ => Usage(),
             };
         }
@@ -54,6 +55,9 @@ internal static class Program
 
             orbit-cli analyze <file.csv>... [--group <prefixHex>]
                 Groups Proximity Pairing frames by device and lists bytes/bits that differ between tags.
+
+            orbit-cli devices
+                Lists paired Bluetooth devices with their Device ID (vendor/product). Addresses are not printed.
             """);
         return 2;
     }
@@ -122,6 +126,18 @@ internal static class Program
         scanner.Stop();
         Console.WriteLine($"Saved {session.AdvertisementCount} Apple advertisements ({session.ProximityPairingCount} proximity pairing) to {session.FilePath}");
         return stopped ? 1 : 0;
+    }
+
+    private static int Devices()
+    {
+        foreach (var d in PairedDeviceCatalog.GetPairedAsync().GetAwaiter().GetResult())
+        {
+            Console.WriteLine($"{d.Name,-40} connected={d.Connected,-5} vendor={Fmt(d.VendorId)} product={Fmt(d.ProductId)} source={d.VendorIdSource?.ToString() ?? "-"}");
+        }
+
+        return 0;
+
+        static string Fmt(ushort? v) => v is { } x ? $"0x{x:X4}" : "-";
     }
 
     private static int Analyze(string[] args)
