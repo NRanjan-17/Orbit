@@ -60,6 +60,20 @@ jobs:
             Compress-Archive -Path "$out/*" -DestinationPath "dist/Orbit-$v-win-$arch.zip"
           }
 
+      - name: Build installers (Inno Setup)
+        shell: pwsh
+        run: |
+          $v = "${{ steps.version.outputs.version }}"
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup install failed" }
+          $iscc = (Get-Command iscc.exe -ErrorAction SilentlyContinue)?.Source
+          if (-not $iscc) { $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe" }
+          foreach ($arch in "x64", "arm64") {
+            & $iscc "/DAppVersion=$v" "/DArch=$arch" "/DSourceDir=..\publish\Orbit-win-$arch" installer\Orbit.iss
+            if ($LASTEXITCODE -ne 0) { throw "installer build failed for $arch" }
+            if (-not (Test-Path "dist/Orbit-$v-win-$arch-setup.exe")) { throw "setup.exe missing for $arch" }
+          }
+
       - name: Publish orbit-cli (x64, single file)
         shell: pwsh
         run: |
@@ -74,7 +88,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: orbit-unsigned
-          path: dist/*.zip
+          path: |
+            dist/*.zip
+            dist/*-setup.exe
           if-no-files-found: error
 
       - name: Sign with SignPath
@@ -89,19 +105,19 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: signed
 
-      - name: Use signed zips
+      - name: Use signed files
         if: env.SIGNPATH_ORGANIZATION_ID != ''
         shell: pwsh
         run: |
-          $signed = Get-ChildItem signed -Recurse -Filter *.zip
-          if (-not $signed) { throw "SignPath returned no zips" }
+          $signed = Get-ChildItem signed -Recurse -Include *.zip, *-setup.exe
+          if (-not $signed) { throw "SignPath returned no files" }
           $signed | Copy-Item -Destination dist -Force
           $signed | ForEach-Object { Write-Host "signed: $($_.Name)" }
 
       - name: Checksums
         shell: pwsh
         run: |
-          Get-ChildItem dist/*.zip | ForEach-Object {
+          Get-ChildItem dist/*.zip, dist/*-setup.exe | ForEach-Object {
             "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
           } | Set-Content -Encoding ascii dist/SHA256SUMS.txt
           Get-Content dist/SHA256SUMS.txt
@@ -114,5 +130,6 @@ jobs:
           body_path: .github/release-notes.md
           generate_release_notes: true # appends the list of changes since the previous release
           files: |
+            dist/*-setup.exe
             dist/*.zip
             dist/SHA256SUMS.txt

@@ -28,6 +28,8 @@ A starting point (adjust to SignPath's current schema during onboarding):
       <pe-file path="Orbit.Core.dll"><authenticode-sign /></pe-file>
       <pe-file path="Orbit.Platform.dll"><authenticode-sign /></pe-file>
     </zip-file>
+    <!-- Orbit-<version>-win-x64-setup.exe / -win-arm64-setup.exe (Inno Setup installers) -->
+    <pe-file path="Orbit-*-setup.exe" max-matches="unbounded"><authenticode-sign /></pe-file>
     <!-- orbit-cli-<version>-win-x64.zip -->
     <zip-file path="orbit-cli-*-win-x64.zip">
       <pe-file path="orbit-cli.exe"><authenticode-sign /></pe-file>
@@ -36,6 +38,10 @@ A starting point (adjust to SignPath's current schema during onboarding):
 </artifact-configuration>
 ```
 Third-party files (the .NET runtime and Windows App SDK DLLs) are already signed by Microsoft and are left alone.
+
+Note: the installers are built before signing, so with this one-step setup the setup.exe itself is signed but the
+`Orbit.exe` it installs is the unsigned build. For a fully signed install, split signing in two (sign the published
+app files first, build the installers from the signed files, then sign the installers) once SignPath is set up.
 
 ## 3. GitHub settings
 Repository → Settings → Secrets and variables → Actions:

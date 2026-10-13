@@ -21,9 +21,13 @@ which Windows only exposes to kernel drivers. Use the button on the headphones. 
 `docs/noise-control.md`.
 
 ### Install
-1. Download **`Orbit-<version>-win-x64.zip`** (or **`-win-arm64`** for ARM PCs) below and extract it anywhere.
-2. Pair your headphones in **Windows Settings → Bluetooth** first.
-3. Run **`Orbit.exe`**. Nothing else needs to be installed; .NET and the Windows App SDK are included.
+1. Pair your headphones in **Windows Settings → Bluetooth** first.
+2. Download **`Orbit-<version>-win-x64-setup.exe`** (or **`-win-arm64-setup.exe`** for ARM PCs) below and run it.
+   You can pick the install folder, install just for you (no admin) or for all users, and add a desktop
+   shortcut or start-with-Windows. Uninstall from **Settings → Apps**.
+3. **Portable instead?** Download `Orbit-<version>-win-x64.zip`, extract it anywhere and run `Orbit.exe`.
+
+Nothing else needs to be installed; .NET and the Windows App SDK are included.
 
 Requirements: Windows 10 2004 or later / Windows 11, and a Bluetooth adapter.
 
