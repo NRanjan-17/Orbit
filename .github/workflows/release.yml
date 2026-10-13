@@ -69,7 +69,8 @@ jobs:
           $iscc = (Get-Command iscc.exe -ErrorAction SilentlyContinue)?.Source
           if (-not $iscc) { $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe" }
           foreach ($arch in "x64", "arm64") {
-            & $iscc "/DAppVersion=$v" "/DArch=$arch" "/DSourceDir=..\publish\Orbit-win-$arch" installer\Orbit.iss
+            $nv = ($v -split '[-+]')[0]  # numeric part for the file version (0.2.0-beta -> 0.2.0)
+            & $iscc "/DAppVersion=$v" "/DNumericVersion=$nv" "/DArch=$arch" "/DSourceDir=..\publish\Orbit-win-$arch" installer\Orbit.iss
             if ($LASTEXITCODE -ne 0) { throw "installer build failed for $arch" }
             if (-not (Test-Path "dist/Orbit-$v-win-$arch-setup.exe")) { throw "setup.exe missing for $arch" }
           }

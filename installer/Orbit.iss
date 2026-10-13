@@ -6,6 +6,9 @@
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
+#ifndef NumericVersion
+  #define NumericVersion AppVersion
+#endif
 #ifndef Arch
   #define Arch "x64"
 #endif
@@ -22,7 +25,8 @@ AppPublisher=Nalinish Ranjan
 AppPublisherURL=https://github.com/NRanjan-17/Orbit
 AppSupportURL=https://github.com/NRanjan-17/Orbit/issues
 AppUpdatesURL=https://github.com/NRanjan-17/Orbit/releases
-VersionInfoVersion={#AppVersion}
+; Windows file versions must be numeric (0.2.0, not 0.2.0-beta).
+VersionInfoVersion={#NumericVersion}
 LicenseFile=..\LICENSE
 
 ; Install location: the user can change it on the "Select Destination Location" page.
