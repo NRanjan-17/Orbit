@@ -54,8 +54,15 @@ Consequences in Orbit:
   Proximity Pairing frames from it, while 403 frames from other nearby Apple devices were received.
 - Consequence: Orbit treats "not heard for 20 s" as *asleep or out of range* and shows the last known values
   with their time, instead of stale values presented as current. Auto-pause forgets any held pause.
-- Open question: whether picking the Max up (motion wake) while it stays plugged in restarts advertising,
-  and whether the charging bit (`d[7] & 0x10`) is then stable. Needs one more capture.
+- Answered by F6: picking the Max up while it stays plugged in restarts advertising.
+
+## F6. Charging session (2026-10-13 23:43, 60 s, Max plugged in by USB-C and awake) — fixture `charging-session-max-usbc.csv`
+- **Battery — VERIFIED (2nd reading):** `d[6] = 06` all session; the Mac showed **65 %** → "60–69%". With F4
+  (37 % ↔ `03`) the low-nibble rule holds at two different levels.
+- **Charging — VERIFIED with smoothing:** `d[7]` was `90` (bit `0x10` set) in 28 of 37 frames, with one ~16 s
+  stretch of `80` mid-charge. Across both unplugged sessions the bit was set in 1 of 432 frames, at the moment of
+  plugging in. So: bit set ⇒ charging; bit clear ⇒ not charging *unless* it was set within the last 30 s
+  (`ChargingLatch`).
 
 Until a field is VERIFIED, Orbit shows it as "unknown" (or with an "unverified" badge when the user
 turns on *Show unverified readings*), and never acts on it automatically (e.g. auto-pause stays off).

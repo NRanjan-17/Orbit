@@ -47,11 +47,12 @@ public class ProximityPairingParserTests
     {
         var status = ProximityPairingParser.Parse(Hex.Parse("0719011F200103800012C400000000000000000000000000000000"), Lookup)!;
 
-        // Battery: confirmed against the Mac (37% <-> nibble 3). Charging: still OpenPods-only.
+        // Battery: confirmed against the Mac (37% <-> nibble 3, 65% <-> 6). Charging bit 0x10 clear here.
         Assert.Equal(30, status.Battery.Value);
         Assert.Equal(Confidence.VerifiedOnDevice, status.Battery.Confidence);
         Assert.Equal("30–39%", ProximityPairingParser.FormatBattery(status.Battery.Value));
-        Assert.Equal(Confidence.SingleSource, status.Charging.Confidence);
+        Assert.False(status.Charging.Value);
+        Assert.Equal(Confidence.VerifiedOnDevice, status.Charging.Confidence);
 
         // On-head is capture-verified for the bound headphones (protocol-findings F4): d[5]=01 -> off head.
         Assert.False(status.Worn.Value);

@@ -14,6 +14,7 @@ public sealed record TrackedDevice(DeviceStatus Status, double SmoothedRssi, sho
 public sealed class DeviceTracker
 {
     private readonly Dictionary<string, TrackedDevice> _candidates = [];
+    private readonly Dictionary<string, ChargingLatch> _latches = [];
     private readonly Func<ushort, ModelProfile?> _lookup;
     private readonly ushort? _boundModelId;
 
@@ -55,6 +56,12 @@ public sealed class DeviceTracker
         }
 
         var key = status.Frame.IdentityKey;
+        if (!_latches.TryGetValue(key, out var latch))
+        {
+            _latches[key] = latch = new ChargingLatch();
+        }
+
+        status = status with { Charging = latch.Update(status.Charging, at) };
         var smoothed = _candidates.TryGetValue(key, out var prev) ? prev.SmoothedRssi * 0.7 + rssi * 0.3 : rssi;
         var tracked = new TrackedDevice(status, smoothed, rssi, at);
         _candidates[key] = tracked;

@@ -52,8 +52,8 @@ multi-source community values are marked *(unverified)*, single-source values ar
 | Frame structure (27 bytes, type 0x07, 16-byte encrypted tail) | ✅ Verified |
 | Device recognition: Windows Device ID product ↔ advertised model bytes | ✅ Verified |
 | On-head: `d[5]` = `2B` on / `01` off (exact values; `3F` in case is treated as unknown) | ✅ Verified (3 tagged transitions) |
-| Battery: low nibble of `d[6]`, 10 % steps, shown as a range | ✅ Verified (one reading: Mac 37 % ↔ 3); a second reading wanted |
-| Charging: `d[7] & 0x10` | ⚠️ Unverified — seen once, not consistent |
+| Battery: low nibble of `d[6]`, 10 % steps, shown as a range | ✅ Verified (two readings: Mac 37 % ↔ 3, 65 % ↔ 6) |
+| Charging: `d[7] & 0x10`, held 30 s to bridge dropouts | ✅ Verified (set 28/37 frames plugged in, 1/432 unplugged) |
 | Noise mode in advertisements | ❌ Not present in unencrypted bytes (verified) |
 | "Connected to another device" bit | ❌ Not present in unencrypted bytes (verified) |
 | Other AirPods models (LibrePods rules, cross-checked with AirPodsDesktop/OpenPods) | ⚠️ Unverified on real hardware; decoder matches AirPodsDesktop's sanitised AirPods 5 captures |
@@ -79,12 +79,11 @@ multi-source community values are marked *(unverified)*, single-source values ar
 ## Test checklist (your hardware)
 1. **Status:** Max out of the case, near the PC → Status shows battery range and *On head / Off head* within a
    few seconds of putting it on / taking it off.
-2. **Second battery reading:** when the Mac shows a different battery level (e.g. below 30 % or above 40 %),
-   check that Orbit's range contains it.
+2. **Battery spot checks:** now and then, check that the Mac's battery % falls inside Orbit's range.
 3. **Auto-pause:** play music on the PC through the Max, take it off → pauses within ~3 s; put it on → resumes.
    Pause manually, take off, put on → must *not* resume.
-4. **Charging:** plug in USB-C with the Max awake (out of case, picked up), turn on *Show unverified readings*,
-   and note whether Charging shows "Yes" for the whole time.
+4. **Charging:** plug in USB-C with the Max awake (out of case, picked up) → Charging shows "Yes" and stays
+   "Yes"; unplug → "No" within about 30 s.
 5. **Switching** (CLI or app): the four steps in [docs/multi-device.md](docs/multi-device.md#test-procedure-cli-works-even-while-the-gui-is-blocked);
    most important is *connect from the PC while the Mac is playing*.
 6. **Spatial sound:** with the Max connected to the PC, pick Windows Sonic on the Status page; check Windows

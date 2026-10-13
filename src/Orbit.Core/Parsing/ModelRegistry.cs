@@ -60,12 +60,15 @@ public static class HeadphoneLayouts
     /// Layout for the user's bound headphones, from tagged captures of the owner's AirPods Max (USB-C)
     /// (docs/protocol-findings.md F4). On-head uses exact byte values because 0x3F (in Smart Case while
     /// charging) shares every bit of 0x2B (on head), so no bit mask is safe. Battery: OpenPods' low nibble
-    /// of d[6] matched the Mac-reported level (37% ↔ nibble 3). Charging stays OpenPods-only (inconsistent).
+    /// of d[6] matched the Mac-reported level twice (37% ↔ 3, 65% ↔ 6). Charging: OpenPods' d[7] &amp; 0x10 is
+    /// never set while unplugged but drops out briefly while charging, so callers smooth it (ChargingLatch).
     /// </summary>
     public static HeadphoneLayout Captured { get; } = Community with
     {
         Battery = new NibbleRule(6, High: false, Confidence.VerifiedOnDevice,
-            "OpenPods rule; confirmed 2026-10-13: Mac showed 37%, d[6] low nibble = 3 (docs/protocol-findings.md F4)"),
+            "OpenPods rule; confirmed 2026-10-13: Mac 37% ↔ nibble 3, Mac 65% ↔ nibble 6 (docs/protocol-findings.md F4, F6)"),
+        Charging = new BitRule(7, 0x10, TrueWhenSet: true, Confidence.VerifiedOnDevice,
+            "OpenPods rule; captures: set in 28/37 frames while plugged in, 1/432 unplugged (at plug-in) (docs/protocol-findings.md F6)"),
         Worn = new ByteValueRule(5, TrueValues: [0x2B], FalseValues: [0x01], Confidence.VerifiedOnDevice,
             "Tagged captures 2026-10-13: d[5]=2B on head, 01 off head (docs/protocol-findings.md F4)"),
     };
