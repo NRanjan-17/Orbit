@@ -8,13 +8,31 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Custom title bar drawn on the app's own (Mica) background instead of the default white strip. -->
+        <Grid x:Name="AppTitleBar" Height="40" Padding="16,0,0,0" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Image Source="Assets/Orbit.png" Width="18" Height="18" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="Orbit" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" />
+        </Grid>
+
     <NavigationView
         x:Name="Nav"
+        Grid.Row="1"
         IsBackButtonVisible="Collapsed"
         IsSettingsVisible="False"
         PaneDisplayMode="Left"
         OpenPaneLength="200"
         IsPaneToggleButtonVisible="True"
+        IsTitleBarAutoPaddingEnabled="False"
         SelectionChanged="OnNavSelectionChanged">
         <NavigationView.MenuItems>
             <NavigationViewItem Content="Status" Tag="status">
@@ -37,4 +55,5 @@
         </NavigationView.FooterMenuItems>
         <Frame x:Name="ContentFrame" />
     </NavigationView>
+    </Grid>
 </Window>

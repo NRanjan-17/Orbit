@@ -17,6 +17,14 @@ public sealed partial class MainWindow : Window
         AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(work.X + (work.Width - w) / 2, work.Y + (work.Height - h) / 2, w, h));
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "Orbit.ico"));
 
+        // Draw our own title bar on the app background; keep the system caption buttons, with transparent
+        // backgrounds so they sit on the same Mica surface.
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
+        var titleBar = AppWindow.TitleBar;
+        titleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
+        titleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
+
         // Closing the window keeps Orbit running in the tray; Exit is in the tray menu.
         AppWindow.Closing += (_, e) =>
         {

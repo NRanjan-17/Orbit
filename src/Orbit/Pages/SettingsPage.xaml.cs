@@ -28,6 +28,7 @@ public sealed partial class SettingsPage : Page
         StartupToggle.IsOn = StartupRegistration.IsEnabled();
         UnverifiedToggle.IsOn = s.ShowUnverified;
         TrayBatteryToggle.IsOn = s.TrayShowsBattery;
+        SingleNumberToggle.IsOn = s.BatteryAsSingleNumber;
         ConnectToastToggle.IsOn = s.ConnectToast;
         ResponseBox.SelectedItem = ResponseBox.Items.OfType<ComboBoxItem>().FirstOrDefault(i => (string)i.Tag == s.AutoPauseResponse) ?? ResponseBox.Items[0];
         ChimeConnectToggle.IsOn = s.ChimeOnConnect;
@@ -62,6 +63,7 @@ public sealed partial class SettingsPage : Page
 
         s.ShowUnverified = UnverifiedToggle.IsOn;
         s.TrayShowsBattery = TrayBatteryToggle.IsOn;
+        s.BatteryAsSingleNumber = SingleNumberToggle.IsOn;
         s.ConnectToast = ConnectToastToggle.IsOn;
         RssiValue.Text = $"{s.RssiThreshold} dBm";
 

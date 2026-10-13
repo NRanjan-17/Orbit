@@ -61,6 +61,15 @@
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE8EF;" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource RowTitle}" Text="Battery as a single number" />
+                    <TextBlock Style="{StaticResource RowDescription}" Text="Without an exact-battery key the headphones only report 10% steps. Show the middle of the step (e.g. 65%) instead of a range (60–69%). Approximate; an exact-battery key always wins." />
+                </StackPanel>
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="SingleNumberToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+            </Grid>
+            <Grid Style="{StaticResource Row}">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xEBA7;" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Show battery in the tray icon" />

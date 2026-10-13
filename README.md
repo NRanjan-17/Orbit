@@ -33,6 +33,8 @@ flyout and pages on a timer and logs any error to `%LOCALAPPDATA%\Orbit\orbit.lo
 Copy the headphones' `MagicAccEncKey` once from your Mac's keychain and paste it on the Status page; Orbit then
 shows the exact percentage instead of a 10 % range. Steps: [docs/exact-battery.md](docs/exact-battery.md).
 The key is stored with Windows DPAPI for your account only and is never written to settings, logs or the repo.
+No Mac or iPhone? **Settings → Battery as a single number** shows the middle of the 10 % step (e.g. 65 %)
+instead of a range; it is approximate, since that is all the readable broadcast carries.
 
 ### Developer tool: `orbit-cli`
 `tools\Orbit.Cli\bin\Debug\net10.0-windows10.0.19041.0\orbit-cli.exe`

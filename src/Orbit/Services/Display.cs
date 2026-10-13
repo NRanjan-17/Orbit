@@ -22,8 +22,19 @@ public static class Display
             ? s.ExactBattery.Confidence < Confidence.VerifiedOnDevice
             : s.LowestBattery.HasValue && s.LowestBattery.Confidence < Confidence.VerifiedOnDevice;
 
+    /// <summary>Settings → "Battery as a single number": show the middle of a 10 % step instead of a range.</summary>
+    public static bool BatteryAsSingleNumber { get; set; }
+
+    /// <summary>
+    /// The number to show for a 10 %-step reading in single-number mode: the middle of the step (60 → 65),
+    /// as OpenPods does; 100 stays 100. Approximate by nature: the broadcast only carries the step.
+    /// </summary>
+    public static int Approximate(int stepLowerBound) => stepLowerBound >= 100 ? 100 : stepLowerBound + 5;
+
     public static string Battery(Reading<int> r, bool showUnverified) =>
-        IsShown(r, showUnverified) ? ProximityPairingParser.FormatBattery(r.Value) + Badge(r.Confidence) : "Unknown";
+        !IsShown(r, showUnverified) ? "Unknown"
+        : BatteryAsSingleNumber ? $"{Approximate(r.Value)}%"
+        : ProximityPairingParser.FormatBattery(r.Value) + Badge(r.Confidence);
 
     /// <summary>Exact percent when decrypted with the user's key, otherwise the advertised 10 % range.</summary>
     public static string BatteryOf(DeviceStatus s, bool showUnverified)

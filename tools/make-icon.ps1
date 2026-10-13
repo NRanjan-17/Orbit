@@ -1,5 +1,6 @@
-# Generates src/Orbit/Assets/Orbit.ico (multi-size) and Orbit.png (256 px):
-# a pair of headphones circled by a tilted orbit ring with a small satellite. Generic shapes, no brand marks.
+# Generates src/Orbit/Assets/Orbit.ico (multi-size) and Orbit.png (256 px).
+# Design: indigo->violet circular badge, white headphones, a light orbit ring with a small satellite.
+# The ring is omitted at 16-24 px so the tray-size icon stays crisp. Generic shapes, no brand marks.
 # Usage: powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 param([string]$OutDir = (Join-Path $PSScriptRoot "..\src\Orbit\Assets"))
 
@@ -23,44 +24,44 @@ function New-OrbitBitmap([int]$size) {
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $g.Clear([System.Drawing.Color]::Transparent)
-
     $s = [single]$size
-    $indigo = [System.Drawing.Color]::FromArgb(255, 88, 86, 214)
-    $violet = [System.Drawing.Color]::FromArgb(255, 150, 140, 255)
-    $ringColor = [System.Drawing.Color]::FromArgb(255, 56, 189, 248)   # sky blue, contrasts with indigo
+    $small = $size -le 24
 
-    # Orbit ring, back half (behind the headphones)
-    $ringPen = New-Object System.Drawing.Pen($ringColor, [Math]::Max(1.2, $s * 0.055))
-    $ringPen.StartCap = $ringPen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-    $rw = $s * 0.47; $rh = $s * 0.17
-    $state = $g.Save()
-    $g.TranslateTransform($s / 2, $s * 0.56); $g.RotateTransform(-18)
-    $g.DrawArc($ringPen, -$rw, -$rh, 2 * $rw, 2 * $rh, 180, 180)
-    $g.Restore($state)
+    # Badge
+    $inset = [Math]::Max(0.5, $s * 0.03)
+    $badge = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
+        (New-Object System.Drawing.PointF(0, 0)), (New-Object System.Drawing.PointF($s, $s)),
+        [System.Drawing.Color]::FromArgb(255, 79, 70, 229),     # indigo
+        [System.Drawing.Color]::FromArgb(255, 147, 51, 234))    # violet
+    $g.FillEllipse($badge, $inset, $inset, $s - 2 * $inset, $s - 2 * $inset)
 
-    # Headband
-    $bandPen = New-Object System.Drawing.Pen($indigo, [Math]::Max(1.6, $s * 0.085))
-    $bandPen.StartCap = $bandPen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-    $bw = $s * 0.58; $bx = ($s - $bw) / 2; $by = $s * 0.12
-    $g.DrawArc($bandPen, $bx, $by, $bw, $s * 0.66, 180, 180)
+    $white = [System.Drawing.Color]::White
 
-    # Ear cups (rounded rectangles) with gradient
-    $cw = $s * 0.19; $ch = $s * 0.32; $cy = $s * 0.42; $cr = $s * 0.06
-    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        (New-Object System.Drawing.PointF(0, $cy)), (New-Object System.Drawing.PointF(0, ($cy + $ch))), $violet, $indigo)
-    foreach ($cx in @(($bx - $cw * 0.45), ($bx + $bw - $cw * 0.55))) {
-        $path = New-RoundRect $cx $cy $cw $ch $cr
-        $g.FillPath($brush, $path)
+    # Orbit ring (larger sizes only): thin, translucent, tilted, around the headphones
+    if (-not $small) {
+        $ring = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(150, 255, 255, 255), [single]($s * 0.035))
+        $state = $g.Save()
+        $g.TranslateTransform($s / 2, $s * 0.54); $g.RotateTransform(-20)
+        $rw = $s * 0.40; $rh = $s * 0.13
+        $g.DrawEllipse($ring, -$rw, -$rh, 2 * $rw, 2 * $rh)
+        $sr = $s * 0.045
+        # Satellite on the lower front of the ring, clear of the ear cups.
+        $g.FillEllipse((New-Object System.Drawing.SolidBrush($white)), -$rw * 0.30 - $sr, $rh * 0.95 - $sr, 2 * $sr, 2 * $sr)
+        $g.Restore($state)
     }
 
-    # Orbit ring, front half + satellite
-    $state = $g.Save()
-    $g.TranslateTransform($s / 2, $s * 0.56); $g.RotateTransform(-18)
-    $g.DrawArc($ringPen, -$rw, -$rh, 2 * $rw, 2 * $rh, 0, 180)
-    $sr = [Math]::Max(1.4, $s * 0.06)
-    $sx = $rw * [Math]::Cos(0.9); $sy = $rh * [Math]::Sin(0.9)
-    $g.FillEllipse((New-Object System.Drawing.SolidBrush($ringColor)), $sx - $sr, $sy - $sr, 2 * $sr, 2 * $sr)
-    $g.Restore($state)
+    # Headphones: headband arc + rounded ear cups, white
+    $scale = if ($small) { 1.12 } else { 1.0 }
+    $bw = $s * 0.46 * $scale; $bx = ($s - $bw) / 2; $by = $s * (0.25 - ($scale - 1) * 0.12)
+    $bandPen = New-Object System.Drawing.Pen($white, [single]([Math]::Max(1.4, $s * 0.075)))
+    $bandPen.StartCap = $bandPen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
+    $g.DrawArc($bandPen, $bx, $by, $bw, $s * 0.48 * $scale, 180, 180)
+
+    $cw = $s * 0.14 * $scale; $ch = $s * 0.24 * $scale; $cy = $by + $s * 0.20 * $scale; $cr = $cw * 0.42
+    $cupBrush = New-Object System.Drawing.SolidBrush($white)
+    foreach ($cx in @(($bx - $cw * 0.35), ($bx + $bw - $cw * 0.65))) {
+        $g.FillPath($cupBrush, (New-RoundRect $cx $cy $cw $ch $cr))
+    }
 
     $g.Dispose()
     return $bmp
@@ -77,7 +78,7 @@ foreach ($sz in $sizes) {
     $bmp.Dispose()
 }
 
-# ICO container with PNG-compressed entries.
+# ICO container with PNG-compressed entries (the shell, taskbar and WinUI all read these).
 $out = New-Object System.IO.MemoryStream
 $w = New-Object System.IO.BinaryWriter($out)
 $w.Write([uint16]0); $w.Write([uint16]1); $w.Write([uint16]$sizes.Count)
@@ -93,13 +94,13 @@ foreach ($p in $pngs) { $w.Write($p) }
 $w.Flush()
 [System.IO.File]::WriteAllBytes((Join-Path $OutDir "Orbit.ico"), $out.ToArray())
 
-# Preview sheet (not shipped): every size side by side on light and dark backgrounds.
-$sheet = New-Object System.Drawing.Bitmap 640, 300
+# Preview sheet (not shipped): sizes on light and dark backgrounds.
+$sheet = New-Object System.Drawing.Bitmap 560, 300
 $sg = [System.Drawing.Graphics]::FromImage($sheet)
-$sg.FillRectangle([System.Drawing.Brushes]::White, 0, 0, 640, 150)
-$sg.FillRectangle((New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(32, 32, 32))), 0, 150, 640, 150)
+$sg.FillRectangle([System.Drawing.Brushes]::White, 0, 0, 560, 150)
+$sg.FillRectangle((New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(32, 32, 32))), 0, 150, 560, 150)
 $x = 8
-foreach ($sz in 16, 24, 32, 48, 64, 128) {
+foreach ($sz in 16, 20, 24, 32, 48, 128) {
     $b = New-OrbitBitmap $sz
     $sg.DrawImage($b, $x, 10); $sg.DrawImage($b, $x, 160)
     $x += $sz + 16
