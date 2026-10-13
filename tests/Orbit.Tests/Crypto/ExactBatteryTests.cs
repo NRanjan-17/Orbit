@@ -24,9 +24,10 @@ public class ExactBatteryTests
     }
 
     /// <summary>Builds a Max frame: coarse nibble <paramref name="coarse"/>, encrypted tail from <paramref name="level"/>.</summary>
-    private static int _nonce;
+    // Per test instance (xUnit creates one per test), so the generated ciphertexts don't depend on test order.
+    private int _nonce;
 
-    private static byte[] Frame(int coarse, int level, bool charging, byte[] key)
+    private byte[] Frame(int coarse, int level, bool charging, byte[] key)
     {
         var plain = new byte[16];
         plain[4] = (byte)Interlocked.Increment(ref _nonce); // real tails change every few seconds; so do ours
@@ -85,12 +86,26 @@ public class ExactBatteryTests
     {
         var other = Convert.FromHexString("F0E0D0C0B0A090807060504030201000");
         var tracker = new DeviceTracker(Bound) { Exact = new ExactBatteryResolver(other, previouslyConfirmedReversed: false) };
-        for (var i = 0; i < ExactBatteryResolver.RecheckAfterFailures; i++)
+
+        // A wrong key decrypts to random bytes; occasionally (~1 in 20) they look plausible, which resets the failure
+        // count. So assert the outcome, not every frame: within a bounded number of broadcasts it must re-check.
+        var frames = 0;
+        while (tracker.Exact!.State == KeyState.Confirmed && frames < 100)
         {
-            Assert.False(tracker.Add(Frame(6, 64, false, Key), -40, T0.AddSeconds(i))!.ExactBattery.HasValue);
+            tracker.Add(Frame(6, 64, false, Key), -40, T0.AddSeconds(frames++));
         }
 
         Assert.Equal(KeyState.Checking, tracker.Exact!.State);
+        Assert.InRange(frames, ExactBatteryResolver.RecheckAfterFailures, 100);
+    }
+
+    [Fact]
+    public void ConfirmedKeyRejectsAJumpInLevel()
+    {
+        var tracker = new DeviceTracker(Bound) { Exact = new ExactBatteryResolver(Key, previouslyConfirmedReversed: false) };
+        Assert.Equal(64, tracker.Add(Frame(6, 64, false, Key), -40, T0)!.ExactBattery.Value);
+        Assert.False(tracker.Add(Frame(6, 69, false, Key), -40, T0.AddSeconds(1))!.ExactBattery.HasValue); // +5: implausible
+        Assert.Equal(63, tracker.Add(Frame(6, 63, false, Key), -40, T0.AddSeconds(2))!.ExactBattery.Value);
     }
 
     [Fact]

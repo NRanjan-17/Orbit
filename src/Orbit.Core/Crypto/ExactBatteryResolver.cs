@@ -74,6 +74,7 @@ public sealed class ExactBatteryResolver
 
     private int _consecutiveFailures;
     private string? _lastConfirmedTail;
+    private int? _lastLevel;
 
     public KeyState State { get; private set; }
 
@@ -112,6 +113,19 @@ public sealed class ExactBatteryResolver
         if (State == KeyState.Confirmed)
         {
             var value = Decode(ProximityKey.DecryptBlock(frame.EncryptedTail, _candidates[_chosen]), coarse);
+
+            // Battery never jumps; a value far from the last accepted one is a random decode (e.g. the key stopped
+            // fitting after a reset) and counts as a failure instead of being shown.
+            if (value is not null && _lastLevel is { } last && Math.Abs(value.Level - last) > 3)
+            {
+                value = null;
+            }
+
+            if (value is not null)
+            {
+                _lastLevel = value.Level;
+            }
+
             var tail = Convert.ToHexString(frame.EncryptedTail);
             if (tail != _lastConfirmedTail)
             {
@@ -123,6 +137,7 @@ public sealed class ExactBatteryResolver
                     State = KeyState.Checking;
                     _chosen = -1;
                     _consecutiveFailures = 0;
+                    _lastLevel = null;
                     foreach (var l in _levels)
                     {
                         l.Clear();
@@ -168,6 +183,7 @@ public sealed class ExactBatteryResolver
             if (_levels[i].Count >= ConfirmAfter)
             {
                 _chosen = i;
+                _lastLevel = decoded.Level;
                 State = KeyState.Confirmed;
                 return decoded;
             }
