@@ -57,7 +57,8 @@ UninstallDisplayName=Orbit
 WizardStyle=modern
 Compression=lzma2/max
 SolidCompression=yes
-; Close a running Orbit (it lives in the tray) before replacing its files.
+; Orbit lives in the tray with no open window, which Windows' Restart Manager can't close reliably, so setup
+; and uninstall stop it explicitly (see [Code] and [UninstallRun]). Restart Manager stays as a fallback.
 CloseApplications=force
 RestartApplications=no
 
@@ -85,7 +86,25 @@ Root: HKCU; Subkey: "Software\Classes\AppUserModelId\Orbit.App"; ValueType: none
 [Run]
 Filename: "{app}\Orbit.exe"; Description: "{cm:LaunchProgram,Orbit}"; Flags: nowait postinstall skipifsilent
 
+[UninstallRun]
+; Runs before the uninstaller deletes files: stop a running Orbit (tray) so none of its files are locked.
+; Owner's report 2026-10-14: uninstalling while Orbit ran left the files in Program Files and the app in the tray.
+Filename: "{sys}\taskkill.exe"; Parameters: "/F /T /IM Orbit.exe"; Flags: runhidden waituntilterminated; RunOnceId: "StopOrbit"
+
 [UninstallDelete]
+; Safety net: remove the whole install folder even if something was left behind.
+Type: filesandordirs; Name: "{app}"
 ; Remove everything Orbit stored for the user: settings.json, the DPAPI-protected exact-battery key
 ; (device-key.bin), orbit.log, the tray icon cache and any Debug captures saved under %LOCALAPPDATA%\Orbit.
 Type: filesandordirs; Name: "{localappdata}\Orbit"
+
+[Code]
+// Before installing or upgrading, stop a running Orbit so its files can be replaced.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /T /IM Orbit.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(500); // let Windows release the file handles
+  Result := '';
+end;
