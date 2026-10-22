@@ -147,6 +147,8 @@ readings drive auto-pause and low-battery alerts.
 
 ## Test checklist (your hardware)
 1. **Status:** Max out of the case, near the PC → battery and *On head / Off head* update within a few seconds.
+   Turn Bluetooth off (Action Center): the "scanning stopped" notice appears; turn it back on → within a few seconds
+   the notice disappears and readings resume on their own.
 2. **Auto-pause:** play music (also in a background Chrome tab), take the Max off → pauses within ~1–2 s; put it on
    → the same player resumes. Pause manually, take off, put on → must *not* resume.
 3. **Auto-output** (Settings → *Play on this PC's speakers when I take them off*, on by default): connect the Max to

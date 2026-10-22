@@ -16,6 +16,9 @@ public sealed class OrbitService : IDisposable
 {
     private readonly DispatcherQueue _ui;
     private readonly AppleAdvertisementScanner _scanner = new();
+    private readonly BluetoothRadioMonitor _radio = new();
+    // Restarting scanning after Windows stopped it: first try after 2 s, backing off to every 15 s.
+    private readonly RetryBackoff _scanRetry = new(TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(15));
     private readonly DispatcherQueueTimer _pruneTimer;
     private DeviceTracker _tracker;
     private AutoPauseController _autoPause;
@@ -37,7 +40,19 @@ public sealed class OrbitService : IDisposable
         _scanner.Stopped += (_, error) => _ui.TryEnqueue(() =>
         {
             ScannerError = $"Bluetooth scanning stopped ({error}). Is Bluetooth turned on?";
+            Log.Write($"scanner stopped: {error}");
+            _scanRetry.Failed(DateTimeOffset.UtcNow);
             Changed?.Invoke(this, EventArgs.Empty);
+        });
+
+        // Bluetooth switched back on: resume scanning right away instead of staying stuck on the error.
+        _radio.StateChanged += (_, on) => _ui.TryEnqueue(() =>
+        {
+            Log.Write($"bluetooth radio {(on ? "on" : "off")}");
+            if (on && ScannerError is not null)
+            {
+                RestartScanner();
+            }
         });
 
         _usb.Changed += (_, _) => _ui.TryEnqueue(() =>
@@ -50,6 +65,12 @@ public sealed class OrbitService : IDisposable
         _pruneTimer.Interval = TimeSpan.FromSeconds(5);
         _pruneTimer.Tick += (_, _) =>
         {
+            // Fallback when no radio event arrives (adapter re-plugged, radio API unavailable).
+            if (ScannerError is not null && _scanRetry.Due(DateTimeOffset.UtcNow))
+            {
+                RestartScanner();
+            }
+
             if (_tracker.Prune(DateTimeOffset.UtcNow))
             {
                 // Auto-output keeps its pending switch-back: the headphones often sleep while off-head.
@@ -60,6 +81,25 @@ public sealed class OrbitService : IDisposable
     }
 
     public event EventHandler? Changed;
+
+    /// <summary>Starts scanning again after it stopped; clears the error on success, backs off on failure.</summary>
+    private void RestartScanner()
+    {
+        try
+        {
+            _scanner.Restart();
+            ScannerError = null;
+            _scanRetry.Succeeded();
+            Log.Write("scanner restarted");
+        }
+        catch (Exception ex)
+        {
+            ScannerError = $"Bluetooth scanning stopped. Is Bluetooth turned on? ({ex.Message})";
+            _scanRetry.Failed(DateTimeOffset.UtcNow);
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     private readonly Platform.Audio.UsbAudioMonitor _usb = new();
 
@@ -118,6 +158,7 @@ public sealed class OrbitService : IDisposable
         }
 
         await RefreshBindingAsync();
+        await _radio.StartAsync();
         try
         {
             _scanner.Start();
@@ -126,6 +167,7 @@ public sealed class OrbitService : IDisposable
         catch (Exception ex)
         {
             ScannerError = $"Could not start Bluetooth scanning: {ex.Message}";
+            _scanRetry.Failed(DateTimeOffset.UtcNow); // e.g. Bluetooth off at launch: retry until it's on
         }
 
         _pruneTimer.Start();
@@ -443,6 +485,7 @@ public sealed class OrbitService : IDisposable
     {
         _pruneTimer.Stop();
         _scanner.Dispose();
+        _radio.Dispose();
         _usb.Dispose();
     }
 }

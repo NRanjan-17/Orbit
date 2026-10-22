@@ -19,22 +19,30 @@ public sealed record RawAppleAdvertisement(
 /// </summary>
 public sealed class AppleAdvertisementScanner : IDisposable
 {
-    private readonly BluetoothLEAdvertisementWatcher _watcher;
+    private readonly bool _activeScanning;
+    private BluetoothLEAdvertisementWatcher _watcher;
     private volatile bool _stopRequested;
 
     public AppleAdvertisementScanner(bool activeScanning = true)
     {
-        _watcher = new BluetoothLEAdvertisementWatcher
+        _activeScanning = activeScanning;
+        _watcher = CreateWatcher();
+    }
+
+    private BluetoothLEAdvertisementWatcher CreateWatcher()
+    {
+        var watcher = new BluetoothLEAdvertisementWatcher
         {
             // Active scanning also yields scan-response packets; harmless and useful when capturing.
-            ScanningMode = activeScanning ? BluetoothLEScanningMode.Active : BluetoothLEScanningMode.Passive,
+            ScanningMode = _activeScanning ? BluetoothLEScanningMode.Active : BluetoothLEScanningMode.Passive,
         };
 
         // Report every advertisement rather than letting Windows sample them by signal strength; auto-pause
         // latency depends on seeing the first frame after the headphones change state.
-        _watcher.SignalStrengthFilter.SamplingInterval = TimeSpan.Zero;
-        _watcher.Received += OnReceived;
-        _watcher.Stopped += OnStopped;
+        watcher.SignalStrengthFilter.SamplingInterval = TimeSpan.Zero;
+        watcher.Received += OnReceived;
+        watcher.Stopped += OnStopped;
+        return watcher;
     }
 
     public event EventHandler<RawAppleAdvertisement>? AdvertisementReceived;
@@ -52,6 +60,22 @@ public sealed class AppleAdvertisementScanner : IDisposable
         {
             _watcher.Start();
         }
+    }
+
+    /// <summary>
+    /// Starts scanning again after Windows stopped it (radio turned off and on, adapter re-plugged). An aborted
+    /// watcher is replaced, because Windows doesn't reliably restart one.
+    /// </summary>
+    public void Restart()
+    {
+        if (_watcher.Status is BluetoothLEAdvertisementWatcherStatus.Aborted or BluetoothLEAdvertisementWatcherStatus.Stopped)
+        {
+            _watcher.Received -= OnReceived;
+            _watcher.Stopped -= OnStopped;
+            _watcher = CreateWatcher();
+        }
+
+        Start();
     }
 
     public void Stop()
