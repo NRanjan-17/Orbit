@@ -31,7 +31,8 @@
     <ScrollViewer>
         <StackPanel Padding="32,24" Spacing="12" MaxWidth="920">
 
-            <InfoBar x:Name="ScannerInfo" Severity="Error" IsClosable="False" />
+            <!-- A notice, not an error: Orbit recovers by itself when Bluetooth comes back. -->
+            <InfoBar x:Name="ScannerInfo" Severity="Warning" IsClosable="False" Title="Bluetooth" />
 
             <!-- Hero: battery + state on the left, connection on the right -->
             <Border Style="{StaticResource Card}">

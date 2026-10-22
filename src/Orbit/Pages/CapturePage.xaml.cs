@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Orbit.Core;
 using Orbit.Core.Capture;
 using Orbit.Platform.Bluetooth;
+using Orbit.Services;
 
 namespace Orbit.Pages;
 
@@ -111,7 +112,8 @@ public sealed partial class CapturePage : Page
         DispatcherQueue.TryEnqueue(() =>
         {
             StopCapture();
-            StatusText.Text = $"Bluetooth scanner stopped ({error}). Is Bluetooth turned on?";
+            StatusText.Text = "Bluetooth scanning stopped. Check that Bluetooth is on, then start capturing again.";
+            Log.Write($"capture: scanner stopped: {error}");
         });
     }
 

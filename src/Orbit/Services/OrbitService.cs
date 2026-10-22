@@ -39,7 +39,7 @@ public sealed class OrbitService : IDisposable
         _scanner.AdvertisementReceived += (_, a) => _ui.TryEnqueue(() => OnAdvertisement(a));
         _scanner.Stopped += (_, error) => _ui.TryEnqueue(() =>
         {
-            ScannerError = $"Bluetooth scanning stopped ({error}). Is Bluetooth turned on?";
+            ScannerError = ScannerStoppedMessage();
             Log.Write($"scanner stopped: {error}");
             _scanRetry.Failed(DateTimeOffset.UtcNow);
             Changed?.Invoke(this, EventArgs.Empty);
@@ -94,12 +94,23 @@ public sealed class OrbitService : IDisposable
         }
         catch (Exception ex)
         {
-            ScannerError = $"Bluetooth scanning stopped. Is Bluetooth turned on? ({ex.Message})";
+            ScannerError = ScannerStoppedMessage();
+            Log.Write($"scanner restart failed: {ex.GetType().Name} 0x{ex.HResult:X8} {ex.Message}");
             _scanRetry.Failed(DateTimeOffset.UtcNow);
         }
 
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>
+    /// What to tell the user when scanning stops. Windows' own codes ("Success", empty messages) mean nothing
+    /// to people, so they go to the log only.
+    /// </summary>
+    private string ScannerStoppedMessage() => _radio.IsOn switch
+    {
+        false => "Bluetooth is off. Turn it on in Quick Settings and Orbit picks your AirPods up again automatically.",
+        _ => "Orbit lost its Bluetooth connection and is reconnecting. If this doesn't clear in a minute, turn Bluetooth off and on.",
+    };
 
     private readonly Platform.Audio.UsbAudioMonitor _usb = new();
 
