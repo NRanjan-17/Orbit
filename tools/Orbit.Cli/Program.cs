@@ -35,6 +35,7 @@ internal static class Program
                 "analyze" or "analyse" => Analyze(args.Skip(1).ToArray()),
                 "devices" => Devices(),
                 "spatial" => args.Length > 2 && args[1] == "--set" ? SpatialSet(args[2]) : Spatial(),
+                "outputs" => Outputs(),
                 "diagnose" => Diagnose(),
                 "rfcomm" => Rfcomm(),
                 "connect" => Switch(args.Skip(1).ToArray(), connect: true),
@@ -75,6 +76,10 @@ internal static class Program
 
             orbit-cli spatial [--set sonic|dolby|off]
                 Shows (or sets) Windows spatial sound for the headphones' output.
+
+            orbit-cli outputs
+                Read-only list of audio outputs: defaults per role, the headphones' endpoints, and the speakers
+                auto-output switches to when the headphones are taken off.
 
             Full guide: docs/cli.md
             """);
@@ -324,6 +329,44 @@ internal static class Program
     {
         var i = Array.IndexOf(args, name);
         return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+    }
+
+    private static int Outputs()
+    {
+        var audio = new Orbit.Platform.Audio.WindowsAudioOutputs();
+        var outputs = audio.GetOutputs();
+        var defaults = Core.Media.AudioOutputs.AllRoles.Select(r => (Role: r, Id: audio.GetDefault(r))).ToList();
+        var headphones = PairedDeviceCatalog.GetPairedAsync().GetAwaiter().GetResult()
+            .FirstOrDefault(d => d.IsApple && d.ContainerId is not null)?.ContainerId;
+        var speakers = Core.Media.AutoOutputController.PickSpeakers(outputs, headphones);
+        foreach (var o in outputs)
+        {
+            var roles = defaults.Where(d => string.Equals(d.Id, o.Id, StringComparison.OrdinalIgnoreCase)).Select(d => d.Role.ToString().ToLowerInvariant());
+            var marks = new List<string>();
+            if (roles.Any())
+            {
+                marks.Add("default: " + string.Join(", ", roles));
+            }
+
+            if (headphones is not null && o.ContainerId == headphones)
+            {
+                marks.Add("headphones");
+            }
+
+            if (o.Id == speakers?.Id)
+            {
+                marks.Add("auto-output speakers");
+            }
+
+            Console.WriteLine($"{o.Kind,-10} {o.Name}{(marks.Count > 0 ? "  [" + string.Join("; ", marks) + "]" : "")}");
+        }
+
+        if (speakers is null)
+        {
+            Console.WriteLine("No speakers found: auto-output would leave the output unchanged.");
+        }
+
+        return 0;
     }
 }
 

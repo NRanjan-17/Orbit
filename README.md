@@ -2,7 +2,7 @@
 
 A Windows companion app for Apple wireless headphones, designed around the **AirPods Max (USB-C)**:
 battery (optionally the exact %) and on-head status from Bluetooth LE advertisements, auto-pause and resume,
-one-click switching between this PC and your Mac, USB-C cable detection, connection notifications, a tray icon
+automatic switching of the sound to the PC's speakers while the headphones are off your head, one-click switching between this PC and your Mac, USB-C cable detection, connection notifications, a tray icon
 (optionally showing the battery) with a menu and flyout, an animated on-head indicator, a chime in the
 headphones, and Windows spatial sound for the headphones' output.
 
@@ -111,6 +111,7 @@ readings drive auto-pause and low-battery alerts.
 | Exact battery % from the decrypted tail (key from your Mac) | ✅ Verified: decrypts on the Max (byte 1 = battery) and the owner confirmed it matches the Mac |
 | Charging: `d[7] & 0x10`, held 30 s to bridge dropouts | ✅ Verified |
 | Auto-pause / resume with real playback | ✅ Verified by the owner; background-tab resume fixed 2026-10-14 (⏳ re-check) |
+| Auto-output: speakers while off-head, headphones when back on | ⏳ Built (0.1.1), logic unit-tested; not yet tried on hardware |
 | Switch to this PC (incl. while the Mac is playing) | ✅ Verified: 3–4 s |
 | Release to other device (hybrid: KS + service toggle) | ✅ Service-toggle release verified; ⏳ hybrid release → Mac connect to confirm |
 | USB-C cable detection | ✅ Detected (Apple USB audio device); on the cable the Max broadcasts only now and then, so on-head/charging update intermittently |
@@ -135,6 +136,11 @@ readings drive auto-pause and low-battery alerts.
   cable.** Orbit then shows the last known values dimmed, with the time they were seen.
 - **Battery resolution is 10 %** from the readable broadcast; the exact % needs the key from your Mac.
 - **Media apps without a Windows media session** cannot be auto-paused.
+- **Auto-output uses an undocumented Windows interface** (`IPolicyConfig`, the one the Sound control panel uses;
+  Windows has no public API for changing the default output device). It has been stable since Windows 7; if a
+  future Windows build changes it, auto-output simply does nothing (logged in `orbit.log`). It only acts when the
+  headphones are the current output, and only switches back from the speakers it chose, so a device you pick
+  yourself is never overridden. Apps that pin their own output device (some call apps) don't follow the default.
 - **Smart App Control** can block the unsigned build: sign it with a trusted certificate, or turn Smart App Control
   off (Windows Security → App & browser control; current Windows 11 builds let you turn it back on).
 - **The headphones' own chime can't be triggered** from Windows; Orbit plays its own chime instead.
@@ -143,19 +149,25 @@ readings drive auto-pause and low-battery alerts.
 1. **Status:** Max out of the case, near the PC → battery and *On head / Off head* update within a few seconds.
 2. **Auto-pause:** play music (also in a background Chrome tab), take the Max off → pauses within ~1–2 s; put it on
    → the same player resumes. Pause manually, take off, put on → must *not* resume.
-3. **Exact battery:** compare Orbit's number with the Mac's Bluetooth menu, press **It matches my Mac**.
-4. **Charging:** plug in USB-C with the Max awake → Charging "Yes"; unplug → "No" within about 30 s.
-5. **USB-C:** connect the cable → "USB-C cable" chip and a notification; disconnect → notification.
-6. **Switching:** see [docs/multi-device.md](docs/multi-device.md); most important: hybrid release, then connect on the Mac.
-7. **"In use by another device":** with the key set and the Max on the Mac, Status shows it; switch to the PC → "Connected to this PC".
-8. **Tray:** hover → tooltip; click → flyout; right-click → menu; Quit exits. Optional battery number as the icon.
-9. **Chime:** Settings → *Test chime* plays in the headphones.
-10. **Low battery / Start with Windows / hotkey / auto-connect:** when convenient.
+3. **Auto-output** (Settings → *Play on this PC's speakers when I take them off*, on by default): connect the Max to
+   the PC, play audio, take it off → sound moves to the laptop speakers within ~1–2 s (Windows' volume flyout shows
+   the speakers as the output); put it back on → sound returns to the headphones. Choose another output manually
+   while it's off → putting it on must leave your choice alone. Take it off, let it sleep for a few minutes, put
+   it on → sound returns to the headphones once it wakes. `orbit-cli outputs` shows which speakers it uses.
+   (With auto-pause on as well, playback is paused while off; turn auto-pause off to keep listening on the speakers.)
+4. **Exact battery:** compare Orbit's number with the Mac's Bluetooth menu, press **It matches my Mac**.
+5. **Charging:** plug in USB-C with the Max awake → Charging "Yes"; unplug → "No" within about 30 s.
+6. **USB-C:** connect the cable → "USB-C cable" chip and a notification; disconnect → notification.
+7. **Switching:** see [docs/multi-device.md](docs/multi-device.md); most important: hybrid release, then connect on the Mac.
+8. **"In use by another device":** with the key set and the Max on the Mac, Status shows it; switch to the PC → "Connected to this PC".
+9. **Tray:** hover → tooltip; click → flyout; right-click → menu; Quit exits. Optional battery number as the icon.
+10. **Chime:** Settings → *Test chime* plays in the headphones.
+11. **Low battery / Start with Windows / hotkey / auto-connect:** when convenient.
 
 ## Project layout
 ```
-src/Orbit.Core      Parsing, model registry, decryption, capture/analysis, tracking, auto-pause, switching logic, settings (pure .NET, tested)
-src/Orbit.Platform  BLE scanner, paired devices, USB audio watcher, media sessions, KS/BluetoothSetServiceState connectors, hotkey, spatial sound, key store
+src/Orbit.Core      Parsing, model registry, decryption, capture/analysis, tracking, auto-pause, auto-output, switching logic, settings (pure .NET, tested)
+src/Orbit.Platform  BLE scanner, paired devices, USB audio watcher, media sessions, default audio output, KS/BluetoothSetServiceState connectors, hotkey, spatial sound, key store
 src/Orbit           WinUI 3 app: Status, Settings, Debug, tray menu + flyout, tray battery icon
 tests/Orbit.Tests   xUnit tests incl. anonymised capture fixtures
 tools/Orbit.Cli     orbit-cli developer tool;  tools/make-icon.ps1 regenerates the app icon

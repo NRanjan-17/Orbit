@@ -120,6 +120,15 @@
             </Grid>
             <Grid Style="{StaticResource Row}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE7F5;" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource RowTitle}" Text="Play on this PC's speakers when I take them off" />
+                    <TextBlock Style="{StaticResource RowDescription}" Text="Switches back to the headphones when you put them on. Only if they were the sound output." />
+                </StackPanel>
+                <ToggleSwitch Width="52" MinWidth="0" Margin="0,0,-12,0" HorizontalAlignment="Right" x:Name="AutoOutputToggle" Grid.Column="2" Style="{StaticResource RowToggle}" Toggled="OnChanged" />
+            </Grid>
+            <Grid Style="{StaticResource Row}">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <FontIcon Style="{StaticResource RowIcon}" Glyph="&#xE916;" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Style="{StaticResource RowTitle}" Text="Response" />

@@ -15,6 +15,7 @@ internal enum EDataFlow
 
 internal static class DeviceState
 {
+    public const uint Active = 0x00000001; // DEVICE_STATE_ACTIVE
     public const uint All = 0x0000000F; // DEVICE_STATEMASK_ALL
 }
 
@@ -105,9 +106,12 @@ internal struct PropertyKey(Guid fmtid, uint pid)
     // propkey.h / functiondiscoverykeys_devpkey.h
     public static PropertyKey DeviceContainerId => new(new Guid("8C7ED206-3F8A-4827-B3AB-AE9E1FAEFC6C"), 2);
     public static PropertyKey DeviceFriendlyName => new(new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 14);
+
+    // mmdeviceapi.h PKEY_AudioEndpoint_FormFactor (VT_UI4, EndpointFormFactor).
+    public static PropertyKey AudioEndpointFormFactor => new(new Guid("1DA5D803-D492-4EDD-8C23-E0C0FFEE7F0E"), 0);
 }
 
-/// <summary>PROPVARIANT subset: VT_LPWSTR (31) and VT_CLSID (72) are all Orbit reads.</summary>
+/// <summary>PROPVARIANT subset: VT_UI4 (19), VT_LPWSTR (31) and VT_CLSID (72) are all Orbit reads.</summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct PropVariant
 {
@@ -119,6 +123,9 @@ internal struct PropVariant
     public IntPtr Pointer2;
 
     public readonly string? AsString() => VarType == 31 ? Marshal.PtrToStringUni(Pointer) : null;
+
+    /// <summary>VT_UI4 sits in the first 4 bytes of the value union (little-endian).</summary>
+    public readonly uint? AsUInt32() => VarType == 19 ? unchecked((uint)Pointer.ToInt64()) : null;
 
     public readonly Guid? AsGuid() => VarType == 72 && Pointer != IntPtr.Zero ? Marshal.PtrToStructure<Guid>(Pointer) : null;
 }

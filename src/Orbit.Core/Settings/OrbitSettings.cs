@@ -17,6 +17,12 @@ public sealed class OrbitSettings
     public bool AutoResume { get; set; } = true;
 
     /// <summary>
+    /// When the headphones are taken off while they are this PC's audio output, switch the Windows default output
+    /// to the PC's speakers; switch back when they are put on again (AutoOutputController).
+    /// </summary>
+    public bool AutoSwitchOutput { get; set; } = true;
+
+    /// <summary>
     /// "fast" = act on the first verified on-head/off-head reading (default; the exact-value rule showed no
     /// spurious flips in captures). "steady" = require 2 readings at least 1.5 s apart (about 2-3 s slower).
     /// </summary>

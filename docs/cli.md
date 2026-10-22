@@ -114,5 +114,13 @@ orbit-cli spatial --set sonic|dolby|off
 `--set` changes the format of the headphones' stereo "Headphones" output and reads it back. `dolby` needs Dolby's
 Dolby Access app installed; `off` turns spatial sound off.
 
+### `outputs` — audio outputs and auto-output's choice (read-only)
+```powershell
+orbit-cli outputs
+```
+Lists the active audio outputs with their kind (Speakers / Headphones / Other), which one is the Windows default
+for each role (console, multimedia, communications), which belong to the paired headphones, and which speakers
+auto-output switches to when the headphones are taken off (built-in speakers preferred). Changes nothing.
+
 ## Exit codes
 `0` success · `1` error (message on stderr), or a switch that ended in failure · `2` unknown command (help printed).

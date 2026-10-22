@@ -19,6 +19,7 @@ public sealed class OrbitService : IDisposable
     private readonly DispatcherQueueTimer _pruneTimer;
     private DeviceTracker _tracker;
     private AutoPauseController _autoPause;
+    private readonly AutoOutputController _autoOutput = new(new Platform.Audio.WindowsAudioOutputs());
     private LowBatteryMonitor _lowBattery;
 
     public OrbitService(DispatcherQueue ui, SettingsStore store)
@@ -29,6 +30,7 @@ public sealed class OrbitService : IDisposable
         Display.EstimateBattery = Settings.EstimateBattery;
         _tracker = new DeviceTracker(null, Settings.RssiThreshold);
         _autoPause = CreateAutoPause();
+        _autoOutput.Enabled = Settings.AutoSwitchOutput;
         _lowBattery = new LowBatteryMonitor(Settings.LowBatteryPercent);
 
         _scanner.AdvertisementReceived += (_, a) => _ui.TryEnqueue(() => OnAdvertisement(a));
@@ -50,6 +52,7 @@ public sealed class OrbitService : IDisposable
         {
             if (_tracker.Prune(DateTimeOffset.UtcNow))
             {
+                // Auto-output keeps its pending switch-back: the headphones often sleep while off-head.
                 _autoPause.Reset();
                 Changed?.Invoke(this, EventArgs.Empty);
             }
@@ -79,6 +82,9 @@ public sealed class OrbitService : IDisposable
     public event EventHandler<(string Name, int Percent)>? LowBattery;
 
     public event EventHandler<AutoPauseAction>? AutoPaused;
+
+    /// <summary>Raised when auto-output moved the Windows default audio output.</summary>
+    public event EventHandler<AutoOutputAction>? OutputSwitched;
 
     public SettingsStore Store { get; }
 
@@ -172,6 +178,7 @@ public sealed class OrbitService : IDisposable
 
         _autoPause.PauseEnabled = Settings.AutoPause;
         _autoPause.ResumeEnabled = Settings.AutoResume;
+        _autoOutput.Enabled = Settings.AutoSwitchOutput;
         _lowBattery.ThresholdPercent = Settings.LowBatteryPercent;
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -328,6 +335,8 @@ public sealed class OrbitService : IDisposable
         };
         _loggedKeyState = _tracker.Exact?.State ?? Core.Crypto.KeyState.None;
         _autoPause = CreateAutoPause();
+        _autoOutput.Reset();
+        _autoOutput.HeadphonesContainer = device?.ContainerId;
         LastKnown = null;
         Changed?.Invoke(this, EventArgs.Empty);
     }
@@ -380,7 +389,32 @@ public sealed class OrbitService : IDisposable
         // Debounced, verified on-head transitions only (not the first reading after start-up).
         if (wornBefore is not null && _autoPause.Worn is { } worn && worn != wornBefore)
         {
+            SwitchOutput(worn);
             WornChanged?.Invoke(this, worn);
+        }
+        else if (wornBefore is null && _autoPause.Worn == true && _autoOutput.HoldingSwitch)
+        {
+            // Woke up already on-head after sleeping while off-head (tracking was reset meanwhile): still put the
+            // sound back on the headphones.
+            SwitchOutput(true);
+        }
+    }
+
+    private void SwitchOutput(bool worn)
+    {
+        try
+        {
+            var action = _autoOutput.OnWornChanged(worn);
+            if (action != AutoOutputAction.None)
+            {
+                Log.Write($"auto-output: {action}");
+                OutputSwitched?.Invoke(this, action);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Core Audio can fail while an endpoint is being added or removed; skip this transition.
+            Log.Error("auto-output", ex);
         }
     }
 

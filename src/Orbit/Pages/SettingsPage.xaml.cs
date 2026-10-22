@@ -23,6 +23,7 @@ public sealed partial class SettingsPage : Page
         RssiValue.Text = $"{s.RssiThreshold} dBm";
         AutoPauseToggle.IsOn = s.AutoPause;
         AutoResumeToggle.IsOn = s.AutoResume;
+        AutoOutputToggle.IsOn = s.AutoSwitchOutput;
         LowBatteryToggle.IsOn = s.LowBatteryToast;
         LowBatteryBox.Value = s.LowBatteryPercent;
         StartupToggle.IsOn = StartupRegistration.IsEnabled();
@@ -55,6 +56,7 @@ public sealed partial class SettingsPage : Page
         s.RssiThreshold = (int)RssiSlider.Value;
         s.AutoPause = AutoPauseToggle.IsOn;
         s.AutoResume = AutoResumeToggle.IsOn;
+        s.AutoSwitchOutput = AutoOutputToggle.IsOn;
         s.LowBatteryToast = LowBatteryToggle.IsOn;
         if (!double.IsNaN(LowBatteryBox.Value))
         {
